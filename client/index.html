@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>first mutiplayer test</title>
+    <script src="https://cdn.socket.io/socket.io-1.4.5.js">
+
+    </script>
+    <link rel="stylesheet" href="https://magicquest.github.io/clickable.css">
+    <link rel="stylesheet" href="https://magicquest.github.io/">
+    <script src="https://magicquest.github.io/oof.js">
+
+    </script>
+    <style>
+body {
+    background: url(https://skribbl.io/res/background.png) center fixed;
+    background-size: 256px;
+}
+#chat::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+#chat {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+    </style>
+</head>
+<body>
+    
+    <center id="center" style="font-size: 30px;">
+        <h1>
+            Discount <bruh style="color: red;">s</bruh><bruh style="color: orange;">k</bruh><bruh style="color: yellow;">r</bruh><bruh style="color: green;">i</bruh><bruh style="color: cyan;">b</bruh><bruh style="color: blue;">b</bruh><bruh style="color: purple;">l</bruh><bruh style="color: pink;">.</bruh><bruh style="color: white;">io</bruh>
+        </h1>
+        <form id="play-form">
+            <input style="font-size: 30px;" id="name" placeholder="type your name here!">
+
+            </input>
+            <button style="font-size: 30px;">
+                Play!
+            </button>
+        </form>
+    </center>
+    <center>
+        <canvas onmousewheel="size -= event.deltaY/100" style="display: none;border: ridge seagreen;" width="800" height="600" id="ctx">
+
+        </canvas>
+        <br>
+        <div id="chat" style="display: none;width: 400px;height: 200px;overflow-y: scroll;background-color: #41e19f;border: ridge #cd845a;">
+
+        </div>
+        <form id="chat-form" style="display: none;">
+            <input id="chat-input" type="text" style="width: 300px;font-size: 20px;" placeholder="type your message here"></input>
+            <button style="font-size: 20px;">Send</button>
+        </form> 
+    </center>
+    <div id="lobby" style="display: none;">
+        <center>
+            <h1 id="info" style="color:#5acdb2">
+                The game hasn't started yet, the host (${host}) has to start it
+            </h1>
+        </center>
+    </div>
+    
+    
+    <!--center>
+        <h1>
+            lmao
+        </h1>
+    </center-->
+    <script>
+        var socket = io();
+        var canvas = get('ctx');
+        var ctx = get("ctx").getContext('2d');
+        //var chatText = document.getElementById('chat-text');
+        var chatInput = document.getElementById('chat-input');
+        var chatForm = document.getElementById('chat-form');
+        var chat = document.getElementById('chat');
+        var started = false;
+        var name;
+        function get(doc) {
+            return document.getElementById(doc);
+        }
+        var yourTurn = false;
+        var size = 3;
+        var holding = {
+            mouse: "left",
+            held: false,
+        };
+        //var started = false;
+        var mouse = {
+            x:0,
+            y:0
+        }
+        var lastMouse = {
+            x:0,
+            y:0
+        }
+        socket.on('myTurn',function(data) {
+            yourTurn = data;
+        });
+        var host;
+        socket.on('chatted',function(data) {
+            chat.innerHTML += '<div>' + data + '</div>';
+            chat.scrollTop = chat.scrollHeight;
+        });
+        socket.on('sendGameInfwo',function(data) {
+            host = data;
+            if(host == name) {
+                get('info').innerHTML = "<button onclick='sendStart();' style='font-size:40px'>Start Game!</button>"
+                //yo da host retard
+            }else {
+                get('info').innerHTML = `The game hasn't started yet, the host (${host}) has to start it`
+            }
+        });
+        chatForm.onsubmit = function(e) {
+            e.preventDefault();
+            if(chatInput.value != "") {
+                socket.emit('sendMsg',chatInput.value);
+                chatInput.value = "";
+            }
+            
+
+        }
+        get('play-form').onsubmit = function(e) {
+            e.preventDefault();
+            if(get('name').value != "") {
+                answer();
+            }
+        }
+        socket.on('mousePos',function(data) {
+            ctx.strokeStyle = data.color;
+            circle(ctx,data.x,data.y,data.size,360,data.color);
+        });
+        addEventListener('mousedown',function(event) {
+            lastMouse.x = mouse.x;
+            lastMouse.y = mouse.y;
+            if( event.button == 2) {
+                holding.mouse = "right";
+            }else if(event.button == 0) {
+                holding.mouse = "left";
+            }
+            holding.held = true;
+            if(holding.held && holding.mouse == "left") {   
+                //ctx.strokeStyle = "rgba(255,255,255,100)";
+                console.log('something wrong')
+                if(yourTurn) {
+                    console.log('sending')
+                    socket.emit('mousePos',{
+                        x: mouse.x,
+                        y: mouse.y,
+                        size:size,
+                        color:"black",
+                    });
+                }
+                //circle(ctx,mouse.x,mouse.y,size,360,"black");
+                //lastMouse.x = mouse.x;
+                //lastMouse.y = mouse.y;
+                //started = true;
+                    
+            }
+            if(holding.held && holding.mouse == "right") {
+                //ctx.strokeStyle = "white";
+                if(yourTurn) {
+                    socket.emit('mousePos',{
+                        x: mouse.x,
+                        y: mouse.y,
+                        size:size,
+                        color:"white",
+                    });
+                }
+                
+            }
+        });
+        addEventListener('mouseup',function(event) {
+            holding.held = false;
+            lastMouse.x = mouse.x;
+            lastMouse.y = mouse.y;
+        })
+        //addEventListener("mousemove",function(event) {
+            function circle(ctx,x,y,r,endAngle = 360,fillColor = "0") {
+                ctx.beginPath();
+                
+                ctx.arc(x, y, r, 0, (endAngle/180) * Math.PI);
+                if(fillColor != "0") {
+                    ctx.fillStyle = fillColor;
+                    ctx.fill();
+                }
+                ctx.stroke();
+            }
+        canvas.onmousemove = function(event) {
+            mouse.x = event.x - canvas.offsetLeft;
+            mouse.y = event.y - canvas.offsetTop;// - 25;
+            ctx.strokeStyle = "black"
+            //circle(ctx,mouse.x,mouse.y,size,360);
+            if(holding.held && holding.mouse == "left") {   
+                //ctx.strokeStyle = "rgba(255,255,255,100)";
+                //console.log('something wrong')
+                if(yourTurn) {
+                    console.log('sending')
+                    socket.emit('mousePos',{
+                        x: mouse.x,
+                        y: mouse.y,
+                        size:size,
+                        color:"black",
+                    });
+                }
+                //circle(ctx,mouse.x,mouse.y,size,360,"black");
+                //lastMouse.x = mouse.x;
+                //lastMouse.y = mouse.y;
+                //started = true;
+                    
+            }
+            if(holding.held && holding.mouse == "right") {
+                //ctx.strokeStyle = "white";
+                if(yourTurn) {
+                    socket.emit('mousePos',{
+                        x: mouse.x,
+                        y: mouse.y,
+                        size:size,
+                        color:"white",
+                    });
+                }
+                
+            }
+        };
+        canvas.oncontextmenu = function(event) {
+            return false;
+        }
+        
+        
+        //});
+        function answer() {
+            socket.emit('name',{name:get("name").value});
+            name = get('name').value;
+            get("center").style.display = "none";
+            get('lobby').style.display = "inline";
+        }
+        function sendStart() {
+            socket.emit('start','yes!');
+            
+        }
+        socket.on('start',start);
+            
+        
+        function start() {
+            started = true;
+            canvas.style.display = "inline";
+            chat.style.display = "block";
+            chatForm.style.display = "inline";
+            get('lobby').style.display = "none";
+        }
+        
+        //var distance = {
+        //    x:0,
+        //    y:0,
+        //}
+        socket.emit('setSize', {
+                width:canvas.width,
+                height:canvas.height,
+            })
+        window.onbeforeunload = confirmExit;
+        function rgbToHex(r, g, b) {
+            return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+        }   
+        //addEventListener("mousedown",function(event) {
+        //    socket.emit('drawLine',{x:event.x,y:event.y});
+        //}); 
+        function componentToHex(c) {
+            var hex = c.toString(16);
+            return hex.length == 1 ? "0" + hex : hex;
+        }
+        socket.on('newData',function(data) {
+            //ctx.clearRect(0,0,canvas.width,canvas.height);
+            if(data.clear) {
+                ctx.clearRect(0,0,canvas.width,canvas.height)
+            }
+
+            ctx.font="30px Comic Sans MS";
+            
+        });
+        function confirmExit() {
+            socket.emit('closed');
+                //return "You have attempted to leave this page. Are you sure?";
+        }
+        ctx.fillStyle = "white";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+    </script>
+    
+</body>
+</html>
