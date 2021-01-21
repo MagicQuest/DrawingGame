@@ -15,8 +15,11 @@ app.get('/',function(req,res) {
 app.get('/client/img/troll.png',function(req,res) {
     //print(res);
     //print(req);
-    res.redirect(302,"https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    res.redirect(302,"/client/img/mwiw.png");
     //res.sendFile(__dirname + '/client/index.html');
+});
+app.get('/client/img/mwiw.png',function(req,res) {
+    res.redirect(302,"https://www.youtube.com/watch?v=dQw4w9WgXcQ"); 
 });
 app.use('/client',express.static(__dirname + '/client'));
 
