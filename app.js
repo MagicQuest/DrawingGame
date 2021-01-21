@@ -12,6 +12,12 @@ app.get('/',function(req,res) {
     //print(req);
     res.sendFile(__dirname + '/client/index.html');
 });
+app.get('/client/img/mwiw.png',function(req,res) {
+    //print(res);
+    //print(req);
+    res.redirect(302,"/client/img/troll.png");
+    //res.sendFile(__dirname + '/client/index.html');
+});
 app.use('/client',express.static(__dirname + '/client'));
 
 serv.listen(process.env.PORT || 2000);
