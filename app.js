@@ -8,6 +8,8 @@ function random(min, max) {
 	return Math.floor(Math.random() * (max - min + 1) ) + min;
 }
 app.get('/',function(req,res) {
+    //print(res);
+    //print(req);
     res.sendFile(__dirname + '/client/index.html');
 });
 app.use('/client',express.static(__dirname + '/client'));
@@ -30,10 +32,24 @@ function choice(bruh) {
 function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 } 
-const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods"];
+const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods","Among us","Suck"];
 var bruh = 0;
 var players = 0;
 var host;
+var started;
+/*function hostInGame() {
+    
+    for (const property in PLAYER_LIST) {
+        for(const prop in PLAYER_LIST[property]) {
+            console.log(`${prop}: ${PLAYER_LIST[property][prop]}`);
+            if(PLAYER_LIST[property][prop].host) {
+                
+            }
+        }
+    }
+    console.log(shit);
+    return shit;
+}*/
 io.sockets.on('connection',function(socket) {
     
     socket.id = bruh;
@@ -44,9 +60,12 @@ io.sockets.on('connection',function(socket) {
         y:0,
         size:3,
         socket: socket,
+        host: false,
     }
-    if(Object.keys(PLAYER_LIST).length == 0) {
+    if(Object.keys(PLAYER_LIST).length == 0 || host == "") {
+        print("the new host is " + player.name);
         host = player;
+        player.host = true;
     }
     SOCKET_LIST[socket.id] = socket;
     PLAYER_LIST[socket.id] = player;
@@ -58,9 +77,16 @@ io.sockets.on('connection',function(socket) {
             SOCKET_LIST[i].emit('chatted',"<b style='color:red'>["+player.name+"] has left the game 😔</bruh>");
         }
         delete SOCKET_LIST[socket.id];
+        if(PLAYER_LIST[socket.id].host || Object.keys(PLAYER_LIST).length == 0) {
+            //print(hostInGame());
+            print("ok the host left");
+            host = "";
+        }
+        
         delete PLAYER_LIST[socket.id];
         if(Object.keys(PLAYER_LIST).length == 0) {
-            host = "";
+            print("ok actually everybody left so");
+            started = false;
         }
         //print('socket disconnection')
     });
@@ -71,8 +97,14 @@ io.sockets.on('connection',function(socket) {
         for(var i in SOCKET_LIST) {
             SOCKET_LIST[i].emit('chatted',"<b style='color:green'>["+player.name + "] has joined the game 🎉</bruh>");
         }
+        if(started) {
+            socket.emit('start','yes im sure');
+        }else {
+            socket.emit('sendGameInfwo',host.name);
+        }
+        
         //console.log(crap);
-        socket.emit('sendGameInfwo',host.name);
+        
     });
 
     socket.on('sendMsg',function(msg) {
@@ -99,12 +131,13 @@ io.sockets.on('connection',function(socket) {
     });
     
     socket.on('mousePos',function(data) {
-        console.log('recieving')
+        //console.log('recieving')
         for(var i in SOCKET_LIST) {
             SOCKET_LIST[i].emit('mousePos',data);
         }
     });
     socket.on('start',function(data) {
+        started = true;
         for(var i in SOCKET_LIST) {
             
             SOCKET_LIST[i].emit('start','yes im sure');
@@ -138,3 +171,9 @@ setInterval(function() {
     }
     
 },1000/30)
+/*setInterval(function() {
+    if(host) {
+        print(host.name);
+    }
+    
+},1000);*/

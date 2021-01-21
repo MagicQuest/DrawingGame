@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta property="og:title" content="Skribble.io remake" />
+    <meta property="og:type" content="website" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>first mutiplayer test</title>
+    <meta property="og:description" content="one of my multiplayer games" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js">
 
     </script>
@@ -135,8 +138,8 @@ body {
             circle(ctx,data.x,data.y,data.size,360,data.color);
         });
         addEventListener('mousedown',function(event) {
-            lastMouse.x = mouse.x;
-            lastMouse.y = mouse.y;
+            lastMouse.x = (event.clientX-canvas.getBoundingClientRect().left);
+            lastMouse.y = (event.clientY-canvas.getBoundingClientRect().top);
             if( event.button == 2) {
                 holding.mouse = "right";
             }else if(event.button == 0) {
@@ -145,9 +148,9 @@ body {
             holding.held = true;
             if(holding.held && holding.mouse == "left") {   
                 //ctx.strokeStyle = "rgba(255,255,255,100)";
-                console.log('something wrong')
+                //console.log('something wrong')
                 if(yourTurn) {
-                    console.log('sending')
+                    //console.log('sending')
                     socket.emit('mousePos',{
                         x: mouse.x,
                         y: mouse.y,
@@ -176,8 +179,8 @@ body {
         });
         addEventListener('mouseup',function(event) {
             holding.held = false;
-            lastMouse.x = mouse.x;
-            lastMouse.y = mouse.y;
+            lastMouse.x = (event.clientX-canvas.getBoundingClientRect().left);
+            lastMouse.y = (event.clientY-canvas.getBoundingClientRect().top);
         })
         //addEventListener("mousemove",function(event) {
             function circle(ctx,x,y,r,endAngle = 360,fillColor = "0") {
@@ -191,15 +194,15 @@ body {
                 ctx.stroke();
             }
         canvas.onmousemove = function(event) {
-            mouse.x = event.x - canvas.offsetLeft;
-            mouse.y = event.y - canvas.offsetTop;// - 25;
+            mouse.x = (event.clientX-canvas.getBoundingClientRect().left);
+            mouse.y = (event.clientY-canvas.getBoundingClientRect().top)// - 25;
             ctx.strokeStyle = "black"
             //circle(ctx,mouse.x,mouse.y,size,360);
             if(holding.held && holding.mouse == "left") {   
                 //ctx.strokeStyle = "rgba(255,255,255,100)";
                 //console.log('something wrong')
                 if(yourTurn) {
-                    console.log('sending')
+                    //console.log('sending')
                     socket.emit('mousePos',{
                         x: mouse.x,
                         y: mouse.y,
