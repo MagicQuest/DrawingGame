@@ -5,13 +5,13 @@
     <meta property="og:title" content="Skribble.io remake" />
     <meta property="og:type" content="website" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>first mutiplayer test</title>
+    <title>second mutiplayer game</title>
     <meta property="og:description" content="one of my multiplayer games" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js">
 
     </script>
     <link rel="stylesheet" href="https://magicquest.github.io/clickable.css">
-    <link rel="stylesheet" href="https://magicquest.github.io/">
+    <!--link rel="stylesheet" href="https://magicquest.github.io/"-->
     <script src="https://magicquest.github.io/oof.js">
 
     </script>
@@ -29,10 +29,19 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+img {
+    cursor:pointer;
+}
+img:hover {
+    outline: cadetblue 2px outset;
+}
+img:hover:active {
+    outline: cadetblue 2px inset;
+}
     </style>
 </head>
 <body>
-    
+    <!--img id="cursor" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Disk_pack1.svg/1200px-Disk_pack1.svg.png" style="display: none;" width=3 height=3-->
     <center id="center" style="font-size: 30px;">
         <h1>
             Discount <bruh style="color: red;">s</bruh><bruh style="color: orange;">k</bruh><bruh style="color: yellow;">r</bruh><bruh style="color: green;">i</bruh><bruh style="color: cyan;">b</bruh><bruh style="color: blue;">b</bruh><bruh style="color: purple;">l</bruh><bruh style="color: pink;">.</bruh><bruh style="color: white;">io</bruh>
@@ -47,11 +56,23 @@ body {
         </form>
     </center>
     <center>
-        <canvas onmousewheel="size -= event.deltaY/100" style="display: none;border: ridge seagreen;" width="800" height="600" id="ctx">
+        <h2 id="showSize" style="user-select: none;display: none;margin-bottom: -39px;z-index: 1;position: relative;">
+            Size: 1
+        </h2>
+        <canvas onmousewheel="size -= event.deltaY/100;get('showSize').innerText = 'Size: '+(size-2);/*;get('cursor').width = size;get('cursor').height = size;*/" style="display: none;border: ridge seagreen;z-index: 0;" width="800" height="600" id="ctx">
 
         </canvas>
         <br>
-        <div id="chat" style="display: none;width: 400px;height: 200px;overflow-y: scroll;background-color: #41e19f;border: ridge #cd845a;">
+        <div id="tools" style="position:relative;display: none;width: 800px;height: 50px;background-color: rgba(0, 0, 0,.25);margin-top: -50px;z-index: 1;">
+            <img src= "https://cdn.pixabay.com/photo/2012/04/12/20/12/x-30465_640.png" title="clear" onclick = "socket.emit('clear');"  width=30 height=30 style="margin-right: 10px;">
+            <img title="pencil" onclick = "usingTool = 'draw'" style="margin-top: 5px;margin-right: 5px;" width=30 height=35 id="drawer" src='https://www.seekpng.com/png/full/18-185525_vector-library-stock-free-pencil-clip-art-images.png'>
+
+            </img>
+            <img title="eraser" onclick = "usingTool = 'erase'" style="margin-top: 5px;" width=30 height=30 id="eraser" src='https://webstockreview.net/images/clipart-school-eraser-5.png'>
+
+            </img>
+        </div>
+        <div id="chat" style="display: none;width: 400px;height: 200px;overflow-y: scroll;background-color: #bbbbbb;border: ridge #cd845a;">
 
         </div>
         <form id="chat-form" style="display: none;">
@@ -81,8 +102,11 @@ body {
         var chatInput = document.getElementById('chat-input');
         var chatForm = document.getElementById('chat-form');
         var chat = document.getElementById('chat');
+        var tools = document.getElementById('tools');
         var started = false;
         var name;
+        var usingTool = "draw";
+        var drawingColor = "black";
         function get(doc) {
             return document.getElementById(doc);
         }
@@ -101,12 +125,24 @@ body {
             x:0,
             y:0
         }
+        socket.on('clear',function() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0,0,canvas.width, canvas.height);
+        });
         socket.on('myTurn',function(data) {
             yourTurn = data;
+            if(yourTurn) {
+                tools.style.display = "block";
+                get('showSize').style.display = "block";
+            }else {
+                tools.style.display = "none";
+                get('showSize').style.display = "none";
+            }
         });
         var host;
         socket.on('chatted',function(data) {
-            chat.innerHTML += '<div>' + data + '</div>';
+            
+            chat.innerHTML += `<div style="background-color:rgba(255,255,255,${chat.childElementCount % 2 == 0 ? .25 : .5})">` + data + '</div>';
             chat.scrollTop = chat.scrollHeight;
         });
         socket.on('sendGameInfwo',function(data) {
@@ -137,6 +173,19 @@ body {
             ctx.strokeStyle = data.color;
             circle(ctx,data.x,data.y,data.size,360,data.color);
         });
+        socket.on('drawingInfo',function(data) {
+            let i = 0;
+            var loop = setInterval(function() {
+                i++;
+                if(i > Object.keys(data).length) {
+                    clearInterval(loop);
+                }
+                //for (var i in data) {
+                    ctx.strokeStyle = data[i].color;
+                    circle(ctx,data[i].x,data[i].y,data[i].size,360,data[i].color);
+                //}
+            },.01);
+        });
         addEventListener('touchmove',function(event) {
             var touchobj = event.changedTouches[0];
             lastMouse.x = (parseInt(touchobj.clientX)-canvas.getBoundingClientRect().left);
@@ -157,10 +206,10 @@ body {
                         x: mouse.x,
                         y: mouse.y,
                         size:size,
-                        color:"black",
+                        color:usingTool == "draw" ? drawingColor : "white",
                     });
                 }
-                //circle(ctx,mouse.x,mouse.y,size,360,"black");
+                //circle(ctx,mouse.x,mouse.y,size,360,drawingColor);
                 //lastMouse.x = mouse.x;
                 //lastMouse.y = mouse.y;
                 //started = true;
@@ -203,10 +252,10 @@ body {
                         x: mouse.x,
                         y: mouse.y,
                         size:size,
-                        color:"black",
+                        color:usingTool == "draw" ? drawingColor : "white",
                     });
                 }
-                //circle(ctx,mouse.x,mouse.y,size,360,"black");
+                //circle(ctx,mouse.x,mouse.y,size,360,drawingColor);
                 //lastMouse.x = mouse.x;
                 //lastMouse.y = mouse.y;
                 //started = true;
@@ -244,7 +293,7 @@ body {
         canvas.onmousemove = function(event) {
             mouse.x = (event.clientX-canvas.getBoundingClientRect().left);
             mouse.y = (event.clientY-canvas.getBoundingClientRect().top)// - 25;
-            ctx.strokeStyle = "black"
+            ctx.strokeStyle = drawingColor
             //circle(ctx,mouse.x,mouse.y,size,360);
             if(holding.held && holding.mouse == "left") {   
                 //ctx.strokeStyle = "rgba(255,255,255,100)";
@@ -255,10 +304,10 @@ body {
                         x: mouse.x,
                         y: mouse.y,
                         size:size,
-                        color:"black",
+                        color:usingTool == "draw" ? drawingColor : "white",
                     });
                 }
-                //circle(ctx,mouse.x,mouse.y,size,360,"black");
+                //circle(ctx,mouse.x,mouse.y,size,360,drawingColor);
                 //lastMouse.x = mouse.x;
                 //lastMouse.y = mouse.y;
                 //started = true;
@@ -288,6 +337,7 @@ body {
             name = get('name').value;
             get("center").style.display = "none";
             get('lobby').style.display = "inline";
+            //tools.style.display = "block";
         }
         function sendStart() {
             socket.emit('start','yes!');
@@ -332,6 +382,7 @@ body {
             ctx.font="30px Comic Sans MS";
             
         });
+        
         function confirmExit() {
             socket.emit('closed');
                 //return "You have attempted to leave this page. Are you sure?";

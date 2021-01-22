@@ -18,9 +18,9 @@ app.get('/client/img/troll.png',function(req,res) {
     res.redirect(302,"/client/img/mwiw.png");
     //res.sendFile(__dirname + '/client/index.html');
 });
-app.get('/client/img/mwiw.png',function(req,res) {
-    res.redirect(302,"https://cdn.dircordapp.com/attachments/373013639579435011/710954899495452672/big_1409268491_1382460628_image.png"); 
-});
+//app.get('/client/img/mwiw.png',function(req,res) {
+    //res.redirect(302,"https://www.youtube.com/watch?v=dQw4w9WgXcQ"); 
+//});
 app.use('/client',express.static(__dirname + '/client'));
 
 serv.listen(process.env.PORT || 2000);
@@ -41,11 +41,14 @@ function choice(bruh) {
 function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 } 
-const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods","Among us","Suck"];
+const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods","Among us","Suck","Cake","Keycard"];
 var bruh = 0;
 var players = 0;
 var host;
 var started;
+var currentWord = choice(WORD_LIST);
+var drawingInfo = {};
+console.log(currentWord);
 /*function hostInGame() {
     
     for (const property in PLAYER_LIST) {
@@ -59,6 +62,18 @@ var started;
     console.log(shit);
     return shit;
 }*/
+function multicast(name,value) {
+    for(var i in SOCKET_LIST) {
+        SOCKET_LIST[i].emit(name,value);
+    }
+}
+function multicastBoolCondition(name,value,condition) {
+    for(var i in SOCKET_LIST) {
+        if(PLAYER_LIST[i][condition]) {
+            SOCKET_LIST[i].emit(name,value);
+        }
+    }
+}
 io.sockets.on('connection',function(socket) {
     
     socket.id = bruh;
@@ -70,6 +85,7 @@ io.sockets.on('connection',function(socket) {
         size:3,
         socket: socket,
         host: false,
+        answered: false,
     }
     if(Object.keys(PLAYER_LIST).length == 0 || host == "") {
         print("the new host is " + player.name);
@@ -82,9 +98,7 @@ io.sockets.on('connection',function(socket) {
     
     //print('socket connection');
     socket.on('disconnect',function() {
-        for(var i in SOCKET_LIST) {
-            SOCKET_LIST[i].emit('chatted',"<b style='color:red'>["+player.name+"] has left the game 😔</bruh>");
-        }
+        multicast('chatted',"<b style='font-weight:bold;color:rgb(206, 79, 10);'>["+player.name+"] has left the game 😔</bruh>");
         delete SOCKET_LIST[socket.id];
         if(PLAYER_LIST[socket.id].host || Object.keys(PLAYER_LIST).length == 0) {
             //print(hostInGame());
@@ -96,6 +110,7 @@ io.sockets.on('connection',function(socket) {
         if(Object.keys(PLAYER_LIST).length == 0) {
             print("ok actually everybody left so");
             started = false;
+            drawingInfo = {};
         }
         //print('socket disconnection')
     });
@@ -103,13 +118,16 @@ io.sockets.on('connection',function(socket) {
     socket.on('name',function(data) {
         print(data.name);
         player.name=data.name;
-        for(var i in SOCKET_LIST) {
-            SOCKET_LIST[i].emit('chatted',"<b style='color:green'>["+player.name + "] has joined the game 🎉</bruh>");
-        }
+        multicast('chatted',"<b style='font-weight:bold;color:rgb(86, 206, 39);'>["+player.name + "] has joined the game 🎉</bruh>");
         if(started) {
             socket.emit('start','yes im sure');
+            socket.emit('drawingInfo',drawingInfo);
         }else {
-            socket.emit('sendGameInfwo',host.name);
+            if(host == player) {
+                multicast('sendGameInfwo',host.name);
+            }else {
+
+            }
         }
         
         //console.log(crap);
@@ -132,18 +150,26 @@ io.sockets.on('connection',function(socket) {
         }else if(msg.substring(0,1) == "*" && msg.substring(msg.length-1,msg.length) == "*") {
             msg = `<i>${msg.slice(1,msg.length-1)}</i>`
         }
-        
-        
-        for(var i in SOCKET_LIST) {
-            SOCKET_LIST[i].emit('chatted',"["+playerName + "]: "+msg);
+        if(player.answered) {
+            multicastBoolCondition('chatted',`<bruh style='color:rgb(66, 186, 19);'>[${playerName}]: ${msg}</bruh>`,"answered");
+        }else {
+            if(msg.toLowerCase() == currentWord.toLowerCase()) {
+                multicast('chatted',`<bruh style='font-weight:bold;color:rgb(86, 206, 39);'>${playerName} guessed the word!</bruh>`);
+                player.answered = true;
+            }else {
+                multicast('chatted',"["+playerName + "]: "+msg);
+            }
         }
+        
     });
-    
+    socket.on('clear',function() {
+        drawingInfo = {};
+        multicast('clear','');
+    });
     socket.on('mousePos',function(data) {
         //console.log('recieving')
-        for(var i in SOCKET_LIST) {
-            SOCKET_LIST[i].emit('mousePos',data);
-        }
+        drawingInfo[Object.keys(drawingInfo).length] = data;
+        multicast('mousePos',data);
     });
     socket.on('start',function(data) {
         started = true;
@@ -151,9 +177,10 @@ io.sockets.on('connection',function(socket) {
             
             SOCKET_LIST[i].emit('start','yes im sure');
             
-            SOCKET_LIST[i].emit('chatted',`<bruh style='color:green'>Its ${host.name}'s turn!</bruh>`);
+            SOCKET_LIST[i].emit('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${host.name}'s turn!</bruh>`);
+            SOCKET_LIST[i].emit('myTurn',PLAYER_LIST[i] == host ? true : false);
         }
-        host.socket.emit('myTurn',true);
+        //host.socket.emit('myTurn',true);
     });
     
     
@@ -180,9 +207,9 @@ setInterval(function() {
     }
     
 },1000/30)
-/*setInterval(function() {
-    if(host) {
-        print(host.name);
-    }
+//setInterval(function() {
+    //if(host) {
+        //print(host.name);
+    //}
     
-},1000);*/
+//},1000);
