@@ -62,7 +62,7 @@ img:hover:active {
         <canvas onmousewheel="size -= event.deltaY/100;get('showSize').innerText = 'Size: '+(size-2);/*;get('cursor').width = size;get('cursor').height = size;*/" style="display: none;border: ridge seagreen;z-index: 0;" width="800" height="600" id="ctx">
 
         </canvas>
-        <br>
+        <!--br-->
         <div id="tools" style="position:relative;display: none;width: 800px;height: 50px;background-color: rgba(0, 0, 0,.25);margin-top: -50px;z-index: 1;">
             <img src= "https://cdn.pixabay.com/photo/2012/04/12/20/12/x-30465_640.png" title="clear" onclick = "socket.emit('clear');"  width=30 height=30 style="margin-right: 10px;">
             <img title="pencil" onclick = "usingTool = 'draw'" style="margin-top: 5px;margin-right: 5px;" width=30 height=35 id="drawer" src='https://www.seekpng.com/png/full/18-185525_vector-library-stock-free-pencil-clip-art-images.png'>
@@ -72,13 +72,15 @@ img:hover:active {
 
             </img>
         </div>
-        <div id="chat" style="display: none;width: 400px;height: 200px;overflow-y: scroll;background-color: #bbbbbb;border: ridge #cd845a;">
+        <div>
+            <div id="chat" style="display: none;width: 400px;height: 200px;overflow-y: scroll;background-color: #bbbbbb;border: ridge #cd845a;">
 
+            </div>
+            <form id="chat-form" style="display: none;">
+                <input id="chat-input" type="text" style="width: 300px;font-size: 20px;" placeholder="type your message here"></input>
+                <button style="font-size: 20px;">Send</button>
+            </form> 
         </div>
-        <form id="chat-form" style="display: none;">
-            <input id="chat-input" type="text" style="width: 300px;font-size: 20px;" placeholder="type your message here"></input>
-            <button style="font-size: 20px;">Send</button>
-        </form> 
     </center>
     <div id="lobby" style="display: none;">
         <center>

