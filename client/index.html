@@ -64,13 +64,17 @@ img:hover:active {
         </canvas>
         <!--br-->
         <div id="tools" style="position:relative;display: none;width: 800px;height: 50px;background-color: rgba(0, 0, 0,.25);margin-top: -50px;z-index: 1;">
-            <img src= "https://cdn.pixabay.com/photo/2012/04/12/20/12/x-30465_640.png" title="clear" onclick = "socket.emit('clear');"  width=30 height=30 style="margin-right: 10px;">
-            <img title="pencil" onclick = "usingTool = 'draw'" style="margin-top: 5px;margin-right: 5px;" width=30 height=35 id="drawer" src='https://www.seekpng.com/png/full/18-185525_vector-library-stock-free-pencil-clip-art-images.png'>
+            <input style="float:left;margin-top: 12px;" placeholder="color here (enter to submit)" onchange="drawingColor=this.value">
+
+            </input>
+            <img title="pencil" onclick = "usingTool = 'draw'" style="margin-top: 5px;margin-right: 5px;margin-left: -125px;" width=30 height=35 id="drawer" src='https://www.seekpng.com/png/full/18-185525_vector-library-stock-free-pencil-clip-art-images.png'>
 
             </img>
             <img title="eraser" onclick = "usingTool = 'erase'" style="margin-top: 5px;" width=30 height=30 id="eraser" src='https://webstockreview.net/images/clipart-school-eraser-5.png'>
 
             </img>
+            <img src= "https://cdn.pixabay.com/photo/2012/04/12/20/12/x-30465_640.png" title="clear" onclick = "socket.emit('clear');"  width=30 height=30 style="float:right;margin-right: 10px;margin-top:7px;">
+
         </div>
         <div>
             <div id="chat" style="display: none;width: 400px;height: 200px;overflow-y: scroll;background-color: #bbbbbb;border: ridge #cd845a;">
