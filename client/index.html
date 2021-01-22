@@ -137,6 +137,54 @@ body {
             ctx.strokeStyle = data.color;
             circle(ctx,data.x,data.y,data.size,360,data.color);
         });
+        addEventListener('touchmove',function(event) {
+            var touchobj = event.changedTouches[0];
+            lastMouse.x = (parseInt(touchobj.clientX)-canvas.getBoundingClientRect().left);
+            lastMouse.y = (parseInt(touchobj.clientY)-canvas.getBoundingClientRect().top);
+            //if( event.button == 2) {
+            //    holding.mouse = "right";
+            //}else if(event.button == 0) {
+            //    holding.mouse = "left";
+            //}
+            holding.mouse = "left";
+            holding.held = true;
+            if(holding.held && holding.mouse == "left") {   
+                //ctx.strokeStyle = "rgba(255,255,255,100)";
+                //console.log('something wrong')
+                if(yourTurn) {
+                    //console.log('sending')
+                    socket.emit('mousePos',{
+                        x: mouse.x,
+                        y: mouse.y,
+                        size:size,
+                        color:"black",
+                    });
+                }
+                //circle(ctx,mouse.x,mouse.y,size,360,"black");
+                //lastMouse.x = mouse.x;
+                //lastMouse.y = mouse.y;
+                //started = true;
+                    
+            }
+            if(holding.held && holding.mouse == "right") {
+                //ctx.strokeStyle = "white";
+                if(yourTurn) {
+                    socket.emit('mousePos',{
+                        x: mouse.x,
+                        y: mouse.y,
+                        size:size,
+                        color:"white",
+                    });
+                }
+                
+            }
+        });
+        addEventListener('touchend',function(event) {
+            var touchobj = event.changedTouches[0];
+            holding.held = false;
+            lastMouse.x = (parseInt(touchobj.clientX)-canvas.getBoundingClientRect().left);
+            lastMouse.y = (parseInt(touchobj.clientY)-canvas.getBoundingClientRect().top);
+        });
         addEventListener('mousedown',function(event) {
             lastMouse.x = (event.clientX-canvas.getBoundingClientRect().left);
             lastMouse.y = (event.clientY-canvas.getBoundingClientRect().top);

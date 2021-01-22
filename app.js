@@ -19,7 +19,7 @@ app.get('/client/img/troll.png',function(req,res) {
     //res.sendFile(__dirname + '/client/index.html');
 });
 app.get('/client/img/mwiw.png',function(req,res) {
-    res.redirect(302,"https://www.youtube.com/watch?v=dQw4w9WgXcQ"); 
+    res.redirect(302,"https://cdn.dircordapp.com/attachments/373013639579435011/710954899495452672/big_1409268491_1382460628_image.png"); 
 });
 app.use('/client',express.static(__dirname + '/client'));
 
