@@ -228,6 +228,7 @@ io.sockets.on('connection',function(socket) {
             }
         }else {
             if(player.answered) {
+                msg = checkEmoji(msg);
                 multicastBoolCondition('chatted',`<bruh style='color:rgb(66, 186, 19);'>[${playerName}]: ${msg}</bruh>`,"answered");
             }else {
                 if(msg.toLowerCase() == currentWord.toLowerCase()) {
