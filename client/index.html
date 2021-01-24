@@ -194,6 +194,7 @@ img:hover:active {
         });
         addEventListener('touchmove',function(event) {
             var touchobj = event.changedTouches[0];
+            //event.preventDefault();
             lastMouse.x = (parseInt(touchobj.clientX)-canvas.getBoundingClientRect().left);
             lastMouse.y = (parseInt(touchobj.clientY)-canvas.getBoundingClientRect().top);
             //if( event.button == 2) {
