@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const serv = require('http').Server(app);
+String.prototype.getFirstLetter = function() {return this.toString().slice(0,1)};
 const print = function(string) {
     console.log(string);
 };
@@ -41,7 +42,7 @@ function choice(bruh) {
 function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 } 
-const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods","Among us","Suck","Cake","Keycard"];
+const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods","Among us","Suck","Cake","Keycard","Cheese","Wocky Slush"];
 var bruh = 0;
 var players = 0;
 var host;
@@ -73,6 +74,17 @@ function multicastBoolCondition(name,value,condition) {
             SOCKET_LIST[i].emit(name,value);
         }
     }
+}
+function changeDrawer(newPlayer) {
+    for(var i in PLAYER_LIST) {
+        PLAYER_LIST[i].answered = false;
+    }
+    newPlayer.answered = true;
+    multicast('myTurn',false);
+    newPlayer.socket.emit('myTurn',true);
+    multicast('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${newPlayer.name}'s turn!</bruh>`);
+    multicast('clear','');
+    drawingInfo = {};
 }
 io.sockets.on('connection',function(socket) {
     
@@ -130,11 +142,7 @@ io.sockets.on('connection',function(socket) {
             socket.emit('start','yes im sure');
             socket.emit('drawingInfo',drawingInfo);
         }else {
-            if(host == player) {
-                multicast('sendGameInfwo',host.name);
-            }else {
-
-            }
+            multicast('sendGameInfwo',host.name);
         }
         
         //console.log(crap);
@@ -157,17 +165,47 @@ io.sockets.on('connection',function(socket) {
         }else if(msg.substring(0,1) == "*" && msg.substring(msg.length-1,msg.length) == "*") {
             msg = `<i>${msg.slice(1,msg.length-1)}</i>`
         }
-        if(player.answered) {
-            multicastBoolCondition('chatted',`<bruh style='color:rgb(66, 186, 19);'>[${playerName}]: ${msg}</bruh>`,"answered");
-        }else {
-            if(msg.toLowerCase() == currentWord.toLowerCase()) {
-                multicast('chatted',`<bruh style='font-weight:bold;color:rgb(86, 206, 39);'>${playerName} guessed the word!</bruh>`);
-                player.answered = true;
+        //console.log(msg);
+        if(msg.getFirstLetter() == "!") {
+            let executed = false;
+            if(msg.includes('!draw ')) {
+                executed = true;
+                person = msg.slice("!draw ".length);
+                for(var i in PLAYER_LIST) {
+                    if(PLAYER_LIST[i].name == person) {
+                        changeDrawer(PLAYER_LIST[i]);
+                    }
+                }
+            }
+            if(executed) {
+                player.socket.emit('chatted',`<bruh style='font-weight:bold;color:rgb(255, 255, 85);'>executed command!</bruh>`);
             }else {
-                multicast('chatted',"["+playerName + "]: "+msg);
+                player.socket.emit('chatted',`<bruh style='font-weight:bold;color:rgb(255, 255, 85);'>dawg what</bruh>`);
+            }
+        }else {
+            if(player.answered) {
+                multicastBoolCondition('chatted',`<bruh style='color:rgb(66, 186, 19);'>[${playerName}]: ${msg}</bruh>`,"answered");
+            }else {
+                if(msg.toLowerCase() == currentWord.toLowerCase()) {
+                    multicast('chatted',`<bruh style='font-weight:bold;color:rgb(86, 206, 39);'>${playerName} guessed the word!</bruh>`);
+                    player.answered = true;
+                }else {
+                    let err = 0;
+                    for (let i = 0;i < msg.length;i++) {
+                        if(msg[i] != currentWord.toLowerCase()[i]) {
+                            err++;
+                        }
+                    }
+                    if(msg.length != currentWord.length) {
+                        err+=err == 1 ? 0 : 1;
+                    }
+                    multicast('chatted',"["+playerName + "]: "+msg);
+                    if(err == 1) {
+                        player.socket.emit('chatted',`<bruh style='font-weight:bold;color:rgb(204, 204, 0);'> '${msg}' is close!</bruh>`)
+                    }
+                }
             }
         }
-        
     });
     socket.on('clear',function() {
         drawingInfo = {};
@@ -187,6 +225,7 @@ io.sockets.on('connection',function(socket) {
             SOCKET_LIST[i].emit('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${host.name}'s turn!</bruh>`);
             SOCKET_LIST[i].emit('myTurn',PLAYER_LIST[i] == host ? true : false);
         }
+        host.answered = true;
         //host.socket.emit('myTurn',true);
     });
     

@@ -59,8 +59,8 @@ img:hover:active {
         <h2 id="showSize" style="user-select: none;display: none;margin-bottom: -39px;z-index: 1;position: relative;">
             Size: 1
         </h2>
-        <canvas onmousewheel="size -= event.deltaY/100;get('showSize').innerText = 'Size: '+(size-2);/*;get('cursor').width = size;get('cursor').height = size;*/" style="display: none;border: ridge seagreen;z-index: 0;" width="800" height="600" id="ctx">
-
+        <canvas onload="console.log('dung')" onmousewheel="event.preventDefault();size -= event.deltaY/200;get('showSize').innerText = 'Size: '+(size-2);/*;get('cursor').width = size;get('cursor').height = size;*/" style="display: none;border: ridge seagreen;z-index: 0;" width="800" height="600" id="ctx">
+            
         </canvas>
         <!--br-->
         <div id="tools" style="position:relative;display: none;width: 800px;height: 50px;background-color: rgba(0, 0, 0,.25);margin-top: -50px;z-index: 1;">
