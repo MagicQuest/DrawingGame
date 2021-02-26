@@ -1,7 +1,11 @@
+const { request } = require('express');
 const express = require('express');
 const app = express();
 const serv = require('http').Server(app);
+const fs = require("fs");
+//var gaming = false;
 String.prototype.getFirstLetter = function() {return this.toString().slice(0,1)};
+let requestedWords = JSON.parse(fs.readFileSync("addedWords.json","utf8"));
 const print = function(string) {
     console.log(string);
 };
@@ -19,6 +23,10 @@ app.get('/client/img/troll.png',function(req,res) {
     res.redirect(302,"/client/img/mwiw.png");
     //res.sendFile(__dirname + '/client/index.html');
 });
+app.get('/request',function(req,res) {
+    res.sendFile(__dirname + '/client/request.html');
+    //gaming = false;
+});
 //app.get('/client/img/mwiw.png',function(req,res) {
     //res.redirect(302,"https://www.youtube.com/watch?v=dQw4w9WgXcQ"); 
 //});
@@ -31,7 +39,7 @@ print("doin' ur mom doin' doin' ur mom");
 var io = require('socket.io')(serv,{});
 var SOCKET_LIST = {};
 var PLAYER_LIST = {};
-var foond = [];
+var requestList = [];
 function componentToHex(c) {
     var hex = c.toString(16);
     return hex.length == 1 ? "0" + hex : hex;
@@ -42,14 +50,22 @@ function choice(bruh) {
 function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 } 
-const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods","Among us","Suck","Cake","Keycard","Cheese","Wocky Slush"];
+const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods","Among us","Suck","Cake","Keycard","Cheese","Wocky Slush","Rabbit","Troll","Bed","Volcano","Computer","GPU"];
+console.log(requestedWords["added"]);
+Object.entries(requestedWords["added"]).forEach((obj)=>{
+    WORD_LIST.push(obj[0]);
+});
+//make a new page where it shows 
 var bruh = 0;
 var players = 0;
-var host;
+var time = 0;
+var host = "";
 var started;
 var drawer;
 var currentWord = choice(WORD_LIST);
 var drawingInfo = {};
+var passwordt = "pain"; //naruto reference!!!!
+
 console.log(currentWord);
 /*function hostInGame() {
     
@@ -76,32 +92,43 @@ function multicastBoolCondition(name,value,condition) {
         }
     }
 }
+function getWordInfo() {
+    let dung = "";
+    for(let i = 0;i < currentWord.length; i++) {
+        dung+=currentWord[i] == " " ? " " : "_";
+    }
+    return dung;
+}
 function changeDrawer(newPlayer) {
     for(var i in PLAYER_LIST) {
         PLAYER_LIST[i].answered = false;
     }
+    currentWord = choice(WORD_LIST);
     newPlayer.answered = true;
-    multicast('myTurn',false);
-    newPlayer.socket.emit('myTurn',true);
+    multicast('myTurn',{turn:false,word:getWordInfo()});
+    newPlayer.socket.emit('myTurn',{turn:true,word: currentWord});
     multicast('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${newPlayer.name}'s turn!</bruh>`);
     multicast('clear','');
     drawingInfo = {};
     drawer = newPlayer;
-    currentWord = choice(WORD_LIST);
+    console.log(currentWord);
 }
 function selectNextDrawer() {
     let check = false;
     let firstTime = true;
     let nextPerson = 0;
     for(var i in PLAYER_LIST) {
-        if(firstTime) {
-            firstTime = false;
-            nextPerson = i;
-        }
-        if(PLAYER_LIST[i] == drawer) {
-            check = true;
-        }else if(check) {
-            nextPerson = i;
+        console.log(PLAYER_LIST[i].name);
+        if(PLAYER_LIST[i].name != "") {
+            if(firstTime) {
+                firstTime = false;
+                nextPerson = i;
+            }
+            if(PLAYER_LIST[i] == drawer) {
+                check = true;
+            }else if(check) {
+                nextPerson = i;
+            }
         }
     }
     changeDrawer(PLAYER_LIST[nextPerson]);
@@ -112,175 +139,336 @@ emojis.set(':zabloing:','https://cdn.discordapp.com/emojis/765548716815024138.pn
 emojis.set(':die:',"https://cdn.discordapp.com/emojis/752283094115024978.gif?v=1");
 emojis.set(':rofl:',"http://discord.com/assets/4c537a5536df74dcb65c6feb2ad3ab44.svg");
 emojis.set(':joy:',"https://discord.com/assets/6201503f3aa918470a2190b36d1e196f.svg");
+emojis.set(':flushed:',"https://discord.com/assets/fd077d826b040d6c8b895de3b7585c25.svg");
+emojis.set(':sunglasses:',"https://discord.com/assets/5f80f04e6ee97feebdd00feff92ced82.svg");
+emojis.set(':SAYCHEESE:',"https://cdn.discordapp.com/emojis/808376879139651604.png?v=1");
 function checkEmoji(msg) {
     emojis.forEach((link,i)=>{
         //console.log(i);
         //console.log(msg);
         //console.log(msg.indexOf(i));
+        //just learned about string.replace come on bro
         if(msg.indexOf(i) != -1) {
             if(msg == i) {
                 msg = `<img style="vertical-align: middle;" src=${link} width="35" height="35" title=${msg.slice(msg.indexOf(i)+1,msg.indexOf(i)+i.length-1)}>`;
             }else {
-                msg = msg.slice(0,msg.indexOf(i)) + `<img style="vertical-align: middle;" src=${link} width="25" height="25" title=${msg.slice(msg.indexOf(i)+1,msg.indexOf(i)+i.length-1)}>` + msg.slice(msg.indexOf(i)+i.length,msg.length);
+                //console.log(new RegExp(i,"g"));
+                msg.replace(new RegExp(i,"g"),`<img style="vertical-align: middle;" src=${link} width="25" height="25" title=${msg.slice(msg.indexOf(i)+1,msg.indexOf(i)+i.length-1)}>`);
+                //console.log(msg,"dawg what");
             }
-            msg = checkEmoji(msg);
+            //msg = checkEmoji(msg);
         }
     });
     return msg;
 }
 io.sockets.on('connection',function(socket) {
-    
     socket.id = bruh;
-    var player = {
-        name: "",
-        points:0,
-        x:0,
-        y:0,
-        size:3,
-        socket: socket,
-        host: false,
-        answered: false,
-    }
-    if(Object.keys(PLAYER_LIST).length == 0 || host == "") {
-        print("the new host is " + player.name);
-        host = player;
-        player.host = true;
-    }
-    SOCKET_LIST[socket.id] = socket;
-    PLAYER_LIST[socket.id] = player;
-    
-    
-    //print('socket connection');
-    socket.on('disconnect',function() {
-        multicast('chatted',"<b style='font-weight:bold;color:rgb(206, 79, 10);'>["+player.name+"] has left the game 😔</bruh>");
-        delete SOCKET_LIST[socket.id];
-        if(PLAYER_LIST[socket.id].host || Object.keys(PLAYER_LIST).length == 0) {
-            //print(hostInGame());
-            print("ok the host left");
-            host = "";
+    //SOCKET_LIST[socket.id] = socket;
+    if(!socket.request.headers.referer.includes("request")) {
+        SOCKET_LIST[socket.id] = socket;
+        var player = {
+            name: "",
+            points:0,
+            x:0,
+            y:0,
+            size:3,
+            socket: socket,
+            host: false,
+            answered: false,
         }
-        if(PLAYER_LIST[socket.id] == drawer) {
-            selectNextDrawer();
-        }
-        delete PLAYER_LIST[socket.id];
-        if(Object.keys(PLAYER_LIST).length == 0) {
-            print("ok actually everybody left so");
-            started = false;
-            drawingInfo = {};
-        }
-        //print('socket disconnection')
-    });
-    socket.on('execute',function(code) {
-        try {
-            eval(code);
-        }catch {
-            
-        }
-    });
-    
-    socket.on('name',function(data) {
-        print(data.name);
-        player.name=data.name;
-        multicast('chatted',"<b style='font-weight:bold;color:rgb(86, 206, 39);'>["+player.name + "] has joined the game 🎉</bruh>");
-        if(started) {
-            socket.emit('start','yes im sure');
-            socket.emit('drawingInfo',drawingInfo);
-        }else {
-            multicast('sendGameInfwo',host.name);
-        }
+        /*if(Object.keys(PLAYER_LIST).length == 0 || host == "") {
+            print("the new host is " + player.name);
+            host = player;
+            player.host = true;
+        }*/
         
-        //console.log(crap);
+        PLAYER_LIST[socket.id] = player;
         
-    });
-
-    socket.on('sendMsg',function(msg) {
-        var playerName = player.name;
-        console.log("["+playerName + "]: "+msg);
-        if(msg.substring(0,2) == "~~" && msg.substring(msg.length-2,msg.length) == "~~") {
-            msg = `<s>${msg.slice(2,msg.length-2)}</s>`
-        }
-        if(msg.substring(0,2) == "__" && msg.substring(msg.length-2,msg.length) == "__") {
-            msg = `<u>${msg.slice(2,msg.length-2)}</u>`
-        }
-        if(msg.substring(0,3) == "***" && msg.substring(msg.length-3,msg.length) == "***") {
-            msg = `<b><i>${msg.slice(3,msg.length-3)}</i></b>`
-        }else if(msg.substring(0,2) == "**" && msg.substring(msg.length-2,msg.length) == "**") {
-            msg = `<b>${msg.slice(2,msg.length-2)}</b>`
-        }else if(msg.substring(0,1) == "*" && msg.substring(msg.length-1,msg.length) == "*") {
-            msg = `<i>${msg.slice(1,msg.length-1)}</i>`
-        }
-        //console.log(msg);
-        if(msg.getFirstLetter() == "!") {
-            let executed = false;
-            if(msg.includes('!draw ')) {
-                executed = true;
-                person = msg.slice("!draw ".length);
-                for(var i in PLAYER_LIST) {
-                    if(PLAYER_LIST[i].name == person) {
-                        changeDrawer(PLAYER_LIST[i]);
-                    }
-                }
+        
+        //print('socket connection');
+        socket.on('disconnect',function() {
+            if(player.name != "") {
+                multicast('chatted',"<b style='font-weight:bold;color:rgb(206, 79, 10);'>["+player.name+"] has left the game 😔</bruh>");
             }
-            if(executed) {
-                player.socket.emit('chatted',`<bruh style='font-weight:bold;color:rgb(255, 255, 85);'>executed command!</bruh>`);
-            }else {
-                player.socket.emit('chatted',`<bruh style='font-weight:bold;color:rgb(255, 255, 85);'>dawg what</bruh>`);
+            delete SOCKET_LIST[socket.id];
+            if(PLAYER_LIST[socket.id].host || Object.keys(PLAYER_LIST).length == 0) {
+                //print(hostInGame());
+                print("ok the host left");
+                host = "";
             }
-        }else {
-            if(player.answered) {
-                msg = checkEmoji(msg);
-                multicastBoolCondition('chatted',`<bruh style='color:rgb(66, 186, 19);'>[${playerName}]: ${msg}</bruh>`,"answered");
+            if(PLAYER_LIST[socket.id] == drawer) {
+                selectNextDrawer();
+            }
+            delete PLAYER_LIST[socket.id];
+            if(Object.keys(PLAYER_LIST).length == 0) {
+                print("ok actually everybody left so");
+                started = false;
+                drawingInfo = {};
+            }
+            //print('socket disconnection')
+        });
+        socket.on('execute',function(code) {
+            try {
+                eval(code);
+            }catch {
+                
+            }
+        });
+        
+        socket.on('name',function(data) {
+            print(data.name);
+            player.name=data.name;
+            //console.log(host);
+            multicast('chatted',"<b style='font-weight:bold;color:rgb(86, 206, 39);'>["+player.name + "] has joined the game 🎉</bruh>");
+            if(started) {
+                socket.emit('start','yes im sure');
+                socket.emit('drawingInfo',drawingInfo);
+                socket.emit('myTurn',{turn:false,word:getWordInfo()});
             }else {
-                if(msg.toLowerCase() == currentWord.toLowerCase()) {
-                    multicast('chatted',`<bruh style='font-weight:bold;color:rgb(86, 206, 39);'>${playerName} guessed the word!</bruh>`);
-                    player.answered = true;
+                if(host.name == "") {
+                    host = player;
                 }else {
-                    let err = 0;
-                    for (let i = 0;i < msg.length;i++) {
-                        if(msg[i] != currentWord.toLowerCase()[i]) {
-                            err++;
+                    let realHost = false;
+                    for (let i in PLAYER_LIST) {
+                        if(PLAYER_LIST[i].name == host.name) {
+                            realHost = true;
                         }
                     }
-                    if(msg.length != currentWord.length) {
-                        err+=err == 0 ? Math.abs(currentWord.length-msg.length) : 0;
+                    if(!realHost) {
+                        host = player;
                     }
-                    //console.log(err);
+                }
+                //console.log(host);
+                multicast('sendGameInfwo',host.name);
+            }
+            //console.log(host);
+            
+            //console.log(crap);
+            
+        });
+
+        socket.on('sendMsg',function(msg) {
+            var playerName = player.name;
+            console.log("["+playerName + "]: "+msg);
+            if(msg.substring(0,2) == "~~" && msg.substring(msg.length-2,msg.length) == "~~") {
+                msg = `<s>${msg.slice(2,msg.length-2)}</s>`
+            }
+            if(msg.substring(0,2) == "__" && msg.substring(msg.length-2,msg.length) == "__") {
+                msg = `<u>${msg.slice(2,msg.length-2)}</u>`
+            }
+            if(msg.substring(0,3) == "***" && msg.substring(msg.length-3,msg.length) == "***") {
+                msg = `<b><i>${msg.slice(3,msg.length-3)}</i></b>`
+            }else if(msg.substring(0,2) == "**" && msg.substring(msg.length-2,msg.length) == "**") {
+                msg = `<b>${msg.slice(2,msg.length-2)}</b>`
+            }else if(msg.substring(0,1) == "*" && msg.substring(msg.length-1,msg.length) == "*") {
+                msg = `<i>${msg.slice(1,msg.length-1)}</i>`
+            }
+            //console.log(player);
+            //console.log(msg);
+            if(msg.getFirstLetter() == "!") {
+                let executed = false;
+                if(msg.includes('!draw ')) {
+                    executed = true;
+                    person = msg.slice("!draw ".length);
+                    for(var i in PLAYER_LIST) {
+                        if(PLAYER_LIST[i].name == person) {
+                            changeDrawer(PLAYER_LIST[i]);
+                        }
+                    }
+                }
+                if(msg.includes("!host ")) {
+                    executed = true;
+                    person = msg.slice("!host ".length);
+                    for(var i in PLAYER_LIST) {
+                        if(PLAYER_LIST[i].name == person) {
+                            host = PLAYER_LIST[i].name;
+                            PLAYER_LIST[i].host = true;
+                        }else {
+                            PLAYER_LIST[i].host = false;
+                        }
+                    }
+                }
+                if(msg.includes("!execute ")) {
+                    try {
+                        let shid = [];
+                        console.logg = function() {
+                            shid.push(Array.from(arguments));
+                            console.log.apply(console,arguments);
+                        }
+                        msg = msg.replace(/console.log/g,"console.logg");
+                        console.log(msg);
+                        eval(msg.slice("!execute ".length));
+                        player.socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>${shid}</code>`);
+                        executed = true;
+                    }catch(err) {
+                        player.socket.emit('chatted',`<code style='font-weight:bold;color:rgb(255,0,0);'>dung heap code -> ${err}</code>`);
+                    }
+                }
+                if(executed) {
+                    player.socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>executed command!</code>`);
+                }else {
+                    player.socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>dawg what</code>`);
+                }
+            }else {
+                if(player.answered) {
                     msg = checkEmoji(msg);
-                    multicast('chatted',"["+playerName + "]: "+msg);
-                    if(err == 1 || (err == 0 && msg.toLowerCase() == currentWord.toLowerCase())) {
-                        player.socket.emit('chatted',`<bruh style='font-weight:bold;color:rgb(204, 204, 0);'> '${msg}' is close!</bruh>`)
+                    multicastBoolCondition('chatted',`<bruh style='color:rgb(66, 186, 19);'>[${playerName}]: ${msg}</bruh>`,"answered");
+                }else {
+                    if(msg.toLowerCase() == currentWord.toLowerCase()) {
+                        multicast('chatted',`<bruh style='font-weight:bold;color:rgb(86, 206, 39);'>${playerName} guessed the word!</bruh>`);
+                        player.answered = true;
+                        let answerers = 0;
+                        for(var i in PLAYER_LIST) {
+                            answerers+=PLAYER_LIST[i].answered ? 1 : 0;
+                        }
+                        if(answerers == Object.keys(PLAYER_LIST).length) {
+                            selectNextDrawer();
+                        }
+                    }else {
+                        let err = 0;
+                        for (let i = 0;i < msg.length;i++) {
+                            if(msg[i] != currentWord.toLowerCase()[i]) {
+                                err++;
+                            }
+                        }
+                        if(msg.length != currentWord.length) {
+                            err+=err == 0 ? Math.abs(currentWord.length-msg.length) : 0;
+                        }
+                        //console.log(err);
+                        msg = checkEmoji(msg);
+                        multicast('chatted',"["+playerName + "]: "+msg);
+                        if(err == 1 || (err == 0 && msg.toLowerCase() == currentWord.toLowerCase())) {
+                            player.socket.emit('chatted',`<bruh style='font-weight:bold;color:rgb(255, 255, 0);'> '${msg}' is close!</bruh>`)
+                        }
                     }
                 }
             }
-        }
-    });
-    socket.on('clear',function() {
-        drawingInfo = {};
-        multicast('clear','');
-    });
-    socket.on('mousePos',function(data) {
-        //console.log('recieving')
-        drawingInfo[Object.keys(drawingInfo).length] = data;
-        multicast('mousePos',data);
-    });
-    socket.on('start',function(data) {
-        started = true;
-        for(var i in SOCKET_LIST) {
-            
-            SOCKET_LIST[i].emit('start','yes im sure');
-            
-            SOCKET_LIST[i].emit('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${host.name}'s turn!</bruh>`);
-            SOCKET_LIST[i].emit('myTurn',PLAYER_LIST[i] == host ? true : false);
-        }
-        host.answered = true;
-        drawer = host;
-        //host.socket.emit('myTurn',true);
-    });
+        });
+        socket.on('clear',function() {
+            drawingInfo = {};
+            multicast('clear','');
+        });
+        socket.on('mousePos',function(data) {
+            //console.log('recieving')
+            drawingInfo[Object.keys(drawingInfo).length] = data;
+            multicast('mousePos',data);
+        });
+        socket.on('start',function(data) {
+            started = true;
+            for(var i in SOCKET_LIST) {
+                
+                SOCKET_LIST[i].emit('start','yes im sure');
+                
+                SOCKET_LIST[i].emit('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${host.name}'s turn!</bruh>`);
+                SOCKET_LIST[i].emit('myTurn',{turn:PLAYER_LIST[i] == host ? true : false,word:PLAYER_LIST[i] == host ? currentWord : getWordInfo()});
+            }
+            host.answered = true;
+            drawer = host;
+            //host.socket.emit('myTurn',true);
+        });
+    }else {
+        requestList[bruh] = socket;
+        //console.log(serv);
+        socket.on('removePassword',function(data) {
+            console.log(data);
+            if(data.password == passwordt) {
+                console.log("delting");
+                let word = data.word;
+                if(!data.approve) {
+                    delete requestedWords["request"][word];
+                    fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
+                        if(err) console.error(err);
+                    });
+                    //console.log(Object.keys(requestedWords["request"][word]).length);
+                    //if(Object.keys(requestedWords["request"][word]).length == 0) {
+    
+                    //}
+                    requestList.forEach((socket)=>{
+                        socket.emit('getRequests',requestedWords["request"]);
+                    });
+                }else {
+                    if(!requestedWords["added"]) requestedWords["added"] = {};
+                    delete requestedWords["request"][word];
+                    //console.log(Object.keys(requestedWords["request"][word]).length);
+                    //if(Object.keys(requestedWords["request"][word]).length == 0) {
+    
+                    //}
+                    requestList.forEach((socket)=>{
+                        socket.emit('getRequests',requestedWords["request"]);
+                    });
+                    requestedWords["added"][word] = 0; 
+                    fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
+                        if(err) console.error(err);
+                    });
+                    WORD_LIST.push(word);
+                }
+            }
+        });
+        socket.on('submit',function(command) {
+            //if(password == passwordt) {
+            //    socket.emit('submit');
+            //}
+            if(command.includes("!remove ")) {
+                let word = command.slice("!remove ".length);
+                delete requestedWords["request"][word];
+                fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
+                    if(err) console.error(err);
+                });
+                //console.log(Object.keys(requestedWords["request"][word]).length);
+                //if(Object.keys(requestedWords["request"][word]).length == 0) {
+
+                //}
+                requestList.forEach((socket)=>{
+                    socket.emit('getRequests',requestedWords["request"]);
+                });
+            }
+        });
+        socket.on('postRequest',function(word){
+            console.log(`word: ${word}`);
+            let acceptable = false;
+            for(let i = 0;i < word.length;i++) {
+                console.log(word[i]);
+                if(word[i] != " ") {
+                    acceptable = true;
+                    break;
+                }
+            }
+            if(acceptable) {
+                if(!requestedWords["request"]) requestedWords["request"] = {};
+                if(requestedWords["added"]) {
+                    console.log(requestedWords["added"][word]);
+                    if(requestedWords["added"][word] != 0) {
+                        requestedWords["request"][word] = 0;
+                        fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
+                            if(err) console.error(err);
+                        });
+                        requestList.forEach((socket)=>{
+                            socket.emit('getRequests',requestedWords["request"]);
+                        });
+                    }else {
+                        socket.emit('postRequest');
+                    }
+                }else {
+                    requestedWords["request"][word] = 0;
+                    fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
+                        if(err) console.error(err);
+                    });
+                    requestList.forEach((socket)=>{
+                        socket.emit('getRequests',requestedWords["request"]);
+                    });
+                }
+            }
+        });
+        socket.on('disconnect',function() {
+            delete requestList[bruh];
+        });
+        socket.emit('getRequests',requestedWords["request"]);
+    }
     
     
     bruh++;
 });
-setInterval(function() {
+/*setInterval(function() {
     players = Object.keys(PLAYER_LIST).length
     //print(Object.keys(SOCKET_LIST).length);
     var pack = [];
@@ -300,7 +488,7 @@ setInterval(function() {
         
     }
     
-},1000/30)
+},1000/30)*/
 //setInterval(function() {
     //if(host) {
         //print(host.name);

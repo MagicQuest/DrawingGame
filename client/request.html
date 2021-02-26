@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta property="og:title" content="Skribble.io remake" />
+    <meta property="og:type" content="website" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>game word requests</title>
+    <meta property="og:description" content="the word request page" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js">
+
+    </script>
+    <link rel="stylesheet" href="https://magicquest.github.io/clickable.css">
+    <!--link rel="stylesheet" href="https://magicquest.github.io/"-->
+    <script src="https://magicquest.github.io/oof.js">
+
+    </script>
+    <style>
+        #requests::-webkit-scrollbar {
+            display:none;
+        }
+        html, body, center {
+            height: 100%;
+        }
+        body {
+            overflow-y: scroll;
+        }
+        body::-webkit-scrollbar {
+            display: none;
+        }
+        button {
+            border: none;
+            background-color: rgba(0,0,0,0);
+        }
+        #show {
+            outline: none;
+            border: outset;
+        }
+        #show:active {
+            border: inset;
+        }
+    </style>
+    
+</head>
+<body>
+    <center id="center">
+        <h1>
+            Word requests
+        </h1>
+        <h2 style="color: red;display: none;" id="error">
+            That word was already added
+        </h2>
+        <!--div id="requestDiv"-->
+            <form id="requestForm">
+                <input placeholder="word" id="word">
+                <br>
+                <button id="show">
+                    submit
+                </button>
+            </form>
+        <!--/div-->
+        <div id="requests" style="overflow-y: scroll;background-color: blanchedalmond;display:block;width: 35%;height: 70%;border: ridge 2px sandybrown;">
+
+        </div>
+        <!--tabindex="0" onblur="remove();"-->
+        <div id="remove" style="display:none;position: absolute;background-color: rgb(255, 206, 132);top: 0px;left: 0px;height:95px;text-align: center;">
+            <p style="margin-bottom: 5px;">
+                In order for you to remove/add this word you must input a password
+            </p>
+            <input onkeyup="if(event.keyCode == 13) {remove();}" placeholder="password?" id="realPassword" style="margin: 10px;margin-top: 0px;margin-bottom:5px;display: inline;">
+            <br>
+            <label>
+                Approve
+            </label>
+            <input type="checkbox" id="approve">
+        </div>
+        <form style="position:absolute;bottom: 10px;" id="passwordForm">
+            <input placeholder="insert the command" id='password'>
+        </form>
+    </center>
+    
+    
+    <!--center>
+        <h1>
+            lmao
+        </h1>
+    </center-->
+    <script>
+        var socket = io();
+        var shid;
+        var requests = get('requests');
+        var removeConfirm = get('remove');
+        var selectedWord;
+        get("passwordForm").onsubmit = function(event) {
+            //it was gonna be for a password thing but i can just use it for commands like removing suggestions
+            event.preventDefault();
+            socket.emit("submit",get("password").value);
+            get("password").value = "";
+        }
+        get("requestForm").onsubmit = function(event) {
+            event.preventDefault();
+            socket.emit('postRequest',get('word').value);
+            get('word').value = "";
+        }
+        socket.on('submit',function() {
+            console.log('Welcome, Agent 47.');
+            get("passwordForm").remove();
+        });
+        socket.on('postRequest',function() {
+            get('error').style.display = "block";
+            setTimeout(function() {
+                get('error').style.display = "none";
+            },1000)
+        });
+        function ONCLICK(event,word) {
+            selectedWord = word.title;
+            removeConfirm.style.left = event.x+"px";
+            removeConfirm.style.top = event.y+"px";
+            removeConfirm.style.display = "block";
+            //removeConfirm.focus();
+        }
+        socket.on('getRequests',function(json) {
+            shid = json;
+            //let words = [];
+            requests.innerHTML = "<div>";
+            Object.entries(shid).forEach((obj)=>{
+                //console.log(obj[0]);
+                //words.push(obj[0]);
+                /*if(get(word)) {
+                    get(word).innerHTML = `,${word}`;
+                }else {
+                    requests.innerHTML += `<div style="text-align: left;"><pre id='${word}'style="font-weight:bold;color:rgb(57, 117, 206);">,${word}</pre></div>`;
+                }*/
+                //console.log(name,word);
+                requests.innerHTML += `<div style="text-align: left;"><button><code onclick="ONCLICK(event,this);console.log('what')" title="${obj[0]}" style="font-size:20px;font-weight:bold;color:rgb(57, 117, 206);">${obj[0]},</code></button></div>`
+            });
+            requests.innerHTML+="</div>"
+            //requests.innerHTML = `<div style="text-align: left;"><code title="${words}" style="font-weight:bold;color:rgb(57, 117, 206);">${words}</code></div>`
+        });
+        function confirmExit() {
+            socket.emit('closed');
+                //return "You have attempted to leave this page. Are you sure?";
+        }
+        function remove() {
+            removeConfirm.style.display = "none";
+            socket.emit('removePassword',{password: get("realPassword").value,word: selectedWord,approve: get('approve').checked});
+            get("realPassword").value = "";
+        }
+    </script>
+    
+</body>
+</html>

@@ -41,7 +41,6 @@ img:hover:active {
     </style>
 </head>
 <body>
-    <!--img id="cursor" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Disk_pack1.svg/1200px-Disk_pack1.svg.png" style="display: none;" width=3 height=3-->
     <center id="center" style="font-size: 30px;">
         <h1>
             Discount <bruh style="color: red;">s</bruh><bruh style="color: orange;">k</bruh><bruh style="color: yellow;">r</bruh><bruh style="color: green;">i</bruh><bruh style="color: cyan;">b</bruh><bruh style="color: blue;">b</bruh><bruh style="color: purple;">l</bruh><bruh style="color: pink;">.</bruh><bruh style="color: white;">io</bruh>
@@ -58,7 +57,9 @@ img:hover:active {
     <center>
         <h2 id="showSize" style="user-select: none;display: none;margin-bottom: -39px;z-index: 1;position: relative;">
             Size: 1
+            
         </h2>
+        <!--img id="cursor" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Disk_pack1.svg/1200px-Disk_pack1.svg.png" style="user-select: none;display: none;margin-bottom: -39px;z-index: 1;position: relative;" width=3 height=3-->
         <canvas onload="console.log('dung')" onmousewheel="event.preventDefault();size -= event.deltaY/200;get('showSize').innerText = 'Size: '+(size-2);/*;get('cursor').width = size;get('cursor').height = size;*/" style="display: none;border: ridge seagreen;z-index: 0;" width="800" height="600" id="ctx">
             
         </canvas>
@@ -68,14 +69,12 @@ img:hover:active {
 
             </input>
             <img title="pencil" onclick = "usingTool = 'draw'" style="margin-top: 5px;margin-right: 5px;margin-left: -125px;" width=30 height=35 id="drawer" src='https://www.seekpng.com/png/full/18-185525_vector-library-stock-free-pencil-clip-art-images.png'>
-
-            </img>
             <img title="eraser" onclick = "usingTool = 'erase'" style="margin-top: 5px;" width=30 height=30 id="eraser" src='https://webstockreview.net/images/clipart-school-eraser-5.png'>
-
-            </img>
+            <img title="fill" onclick="usingTool = 'fill'" style="margin-top: 5px;margin-right: 5px;margin-left: -115px;" width=35 height=35 src="https://icon-library.com/images/paint-bucket-icon/paint-bucket-icon-2.jpg">
             <img src= "https://cdn.pixabay.com/photo/2012/04/12/20/12/x-30465_640.png" title="clear" onclick = "socket.emit('clear');"  width=30 height=30 style="float:right;margin-right: 10px;margin-top:7px;">
 
         </div>
+        <h1><code style="letter-spacing: 2px;margin-bottom: -15px;display: block;" id="letters"></code></h1>
         <div>
             <div id="chat" style="display: none;width: 400px;height: 200px;overflow-y: scroll;background-color: #bbbbbb;border: ridge #cd845a;">
 
@@ -104,7 +103,95 @@ img:hover:active {
         var socket = io();
         var canvas = get('ctx');
         var ctx = get("ctx").getContext('2d');
-        //var chatText = document.getElementById('chat-text');
+        //dung code i stole off of a random website for a fill stuff
+        var the_canvas = canvas;
+        var the_canvas_context = ctx;
+        var letterInfo = get("letters");
+
+            //stolen from this website https://ben.akrin.com/?p=7888
+            function flood_fill( x, y, color ) {
+                pixel_stack = [{x:x, y:y}] ;
+                pixels = the_canvas_context.getImageData( 0, 0, the_canvas.width, the_canvas.height ) ;
+                var linear_cords = ( y * the_canvas.width + x ) * 4 ;
+                original_color = {r:pixels.data[linear_cords],
+                                  g:pixels.data[linear_cords+1],
+                                  b:pixels.data[linear_cords+2],
+                                  a:pixels.data[linear_cords+3]} ;
+
+                while( pixel_stack.length>0 ) {
+                    new_pixel = pixel_stack.shift() ;
+                    x = new_pixel.x ;
+                    y = new_pixel.y ;
+
+                    //console.log( x + ", " + y ) ;
+              
+                    linear_cords = ( y * the_canvas.width + x ) * 4 ;
+                    while( y-->=0 &&
+                           (pixels.data[linear_cords]==original_color.r &&
+                            pixels.data[linear_cords+1]==original_color.g &&
+                            pixels.data[linear_cords+2]==original_color.b &&
+                            pixels.data[linear_cords+3]==original_color.a) ) {
+                        linear_cords -= the_canvas.width * 4 ;
+                    }
+                    linear_cords += the_canvas.width * 4 ;
+                    y++ ;
+
+                    var reached_left = false ;
+                    var reached_right = false ;
+                    while( y++<the_canvas.height &&
+                           (pixels.data[linear_cords]==original_color.r &&
+                            pixels.data[linear_cords+1]==original_color.g &&
+                            pixels.data[linear_cords+2]==original_color.b &&
+                            pixels.data[linear_cords+3]==original_color.a) ) {
+                        pixels.data[linear_cords]   = color.r ;
+                        pixels.data[linear_cords+1] = color.g ;
+                        pixels.data[linear_cords+2] = color.b ;
+                        pixels.data[linear_cords+3] = color.a ;
+
+                        if( x>0 ) {
+                            if( pixels.data[linear_cords-4]==original_color.r &&
+                                pixels.data[linear_cords-4+1]==original_color.g &&
+                                pixels.data[linear_cords-4+2]==original_color.b &&
+                                pixels.data[linear_cords-4+3]==original_color.a ) {
+                                if( !reached_left ) {
+                                    pixel_stack.push( {x:x-1, y:y} ) ;
+                                    reached_left = true ;
+                                }
+                            } else if( reached_left ) {
+                                reached_left = false ;
+                            }
+                        }
+                    
+                        if( x<the_canvas.width-1 ) {
+                            if( pixels.data[linear_cords+4]==original_color.r &&
+                                pixels.data[linear_cords+4+1]==original_color.g &&
+                                pixels.data[linear_cords+4+2]==original_color.b &&
+                                pixels.data[linear_cords+4+3]==original_color.a ) {
+                                if( !reached_right ) {
+                                    pixel_stack.push( {x:x+1,y:y} ) ;
+                                    reached_right = true ;
+                                }
+                            } else if( reached_right ) {
+                                reached_right = false ;
+                            }
+                        }
+                        
+                        linear_cords += the_canvas.width * 4 ;
+                    }
+                }
+                the_canvas_context.putImageData( pixels, 0, 0 ) ;
+            }
+
+            function is_in_pixel_stack( x, y, pixel_stack ) {
+                for( var i=0 ; i<pixel_stack.length ; i++ ) {
+                    if( pixel_stack[i].x==x && pixel_stack[i].y==y ) {
+                        return true ;
+                    }
+                }
+                return false ;
+            }
+
+            //var chatText = document.getElementById('chat-text');
         var chatInput = document.getElementById('chat-input');
         var chatForm = document.getElementById('chat-form');
         var chat = document.getElementById('chat');
@@ -136,18 +223,20 @@ img:hover:active {
             ctx.fillRect(0,0,canvas.width, canvas.height);
         });
         socket.on('myTurn',function(data) {
-            yourTurn = data;
+            yourTurn = data.turn;
             if(yourTurn) {
+                letterInfo.innerText = data.word;
                 tools.style.display = "block";
                 get('showSize').style.display = "block";
             }else {
+                //console.log(data.word);
+                letterInfo.innerText = data.word;
                 tools.style.display = "none";
                 get('showSize').style.display = "none";
             }
         });
         var host;
         socket.on('chatted',function(data) {
-            
             chat.innerHTML += `<div style="background-color:rgba(255,255,255,${chat.childElementCount % 2 == 0 ? .25 : .5})">` + data + '</div>';
             chat.scrollTop = chat.scrollHeight;
         });
@@ -241,7 +330,7 @@ img:hover:active {
             lastMouse.x = (parseInt(touchobj.clientX)-canvas.getBoundingClientRect().left);
             lastMouse.y = (parseInt(touchobj.clientY)-canvas.getBoundingClientRect().top);
         });
-        addEventListener('mousedown',function(event) {
+        canvas.addEventListener('mousedown',function(event) {
             lastMouse.x = (event.clientX-canvas.getBoundingClientRect().left);
             lastMouse.y = (event.clientY-canvas.getBoundingClientRect().top);
             if( event.button == 2) {
@@ -380,15 +469,6 @@ img:hover:active {
             var hex = c.toString(16);
             return hex.length == 1 ? "0" + hex : hex;
         }
-        socket.on('newData',function(data) {
-            //ctx.clearRect(0,0,canvas.width,canvas.height);
-            if(data.clear) {
-                ctx.clearRect(0,0,canvas.width,canvas.height)
-            }
-
-            ctx.font="30px Comic Sans MS";
-            
-        });
         
         function confirmExit() {
             socket.emit('closed');
