@@ -20,7 +20,11 @@ app.get('/',function(req,res) {
 app.get('/client/img/troll.png',function(req,res) {
     //print(res);
     //print(req);
-    res.redirect(302,"/client/img/mwiw.png");
+    //res.redirect(302,"/client/img/mwiw.png");
+    let script = `window.onload = function() {
+        location.href = 'https://youtube.com';
+    };`
+    res.send(`<html style="height: 100%;"><head><meta name="viewport" content="width=device-width, minimum-scale=0.1"><title>troll.png (461×434)</title></head><body style="margin: 0px; background: #0e0e0e; height: 100%"><img style="-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 90%);transition: background-color 300ms;" src="${__dirname + "/client/img/mwiw.png"}"></body><script>${script}</script></html>`);//(fs.readFileSync("client/img/troll.png","utf8")+"<script>console.log('fuck you lol')</script>")
     //res.sendFile(__dirname + '/client/index.html');
 });
 app.get('/request',function(req,res) {
