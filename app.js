@@ -1,22 +1,180 @@
-const { request } = require('express');
 const express = require('express');
 const app = express();
-const serv = require('http').Server(app);
+const http = require("http");
+const serv = http.Server(app);
 const fs = require("fs");
+const print = console.log;
 //var gaming = false;
-String.prototype.getFirstLetter = function() {return this.toString().slice(0,1)};
-let requestedWords = JSON.parse(fs.readFileSync("addedWords.json","utf8"));
-const print = function(string) {
+String.prototype.getFirstLetter = function() {return this.toString().slice(0,1)}; //i could actually jus tto string.at()
+String.prototype.allIndexOf = function(char) {
+    let results = [];
+    let string = this.toString();
+    function index(start) {
+        let i = string.indexOf(char, start);
+        if(i != -1) {
+            results.push(i);
+            index(i+1);
+        }
+    }
+    //console.log(this.toString().indexOf("string"));
+    index(this.toString(), 0);
+    return results;
+}
+let requestedWords = JSON.parse(fs.readFileSync(__dirname + "/addedWords.json","utf8"));
+
+/*const print = function(string) {
     console.log(string);
-};
+};*/
+
 function random(min, max) {
 	return Math.floor(Math.random() * (max - min + 1) ) + min;
 }
 app.get('/',function(req,res) {
     //print(res);
     //print(req);
-    res.sendFile(__dirname + '/client/index.html');
+    res.setHeader("Access-Control-Allow-Origin","*");
+    res.sendFile(__dirname + /*'/client/index.html'*/ '/client/drawing2.html');
 });
+/*app.get('/vpn/:link/go',function(req,res) {
+    try {
+        //console.log(req.url);
+        /*http.request({host: req.params.link},(response) =>{
+            var str = '';
+    
+            //another chunk of data has been received, so append it to `str`
+            response.on('data', function (chunk) {
+                str += chunk;
+            });
+    
+            //the whole response has been received, so we just print it out here
+            response.on('end', function () {
+                console.log(str);
+                res.send(str);
+            });
+        }).end();*/
+        //require("child_process").execSync(`curl "https://${req.params.link}/" -L -H "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36" -o ${__dirname}/web.html`);
+        //if(!fs.existsSync(__dirname + "/client/"+req.params.link)) fs.mkdirSync(__dirname + "/client/"+req.params.link);
+
+        /*let file = fs.readFileSync(__dirname + "/web.html", "utf8");
+        let realFile = file;
+        let processed = {};
+        file.allIndexOf("src").forEach(index => {
+            let string = file.substring(index+5,file.indexOf("\"",index+5));
+            let striped = string.replaceAll("\\", "").replaceAll("/", "").replaceAll(":", "").replaceAll("*", "").replaceAll("\"", "").replaceAll("<", "").replaceAll(">", "").replaceAll("|", "");
+            if(striped.indexOf(".") == 0) {
+                striped = striped.substring(1);
+            }
+            if(string.getFirstLetter() == "/") {
+                string = `https://${req.params.link}` + string;
+            }else if(string.indexOf("./") == 0) {
+                string = `https://${req.params.link}` + string.substring(1);
+            }else if(string.indexOf("http") != 0) {
+                string = `https://${req.params.link}/` + string;
+            }
+            //console.log(string);
+            if(!processed[string]) {
+                //console.log(`"${string}" "${__dirname + "/client/" + req.params.link + "/" + striped}" "${__dirname + "/client/" + req.params.link + "/" + striped}"`);
+                require("child_process").execSync(`cmd /K curl "${string}" -L -z "${__dirname + "/client/" + req.params.link + "/" + striped}" -o "${__dirname + "/client/" + req.params.link + "/" + striped}"`);
+                console.log(file.substring(index+5,file.indexOf("\"",index+5)));
+                realFile = realFile.replaceAll(file.substring(index+5,file.indexOf("\"",index+5)), `../${req.params.link}/${striped}`);
+                processed[string] = true;
+            }
+        });
+        res.send(realFile);*/
+    /*    res.sendFile(__dirname + "/web.html");
+    }catch(e) {
+        res.send(`<h1>bruh thats on cap fella you wilin' (${e})</h1>`); //bruh the catch didn't wok
+    }
+});
+app.get('/vpn/:link/*',function(req,res) {
+    try {
+        console.log(req.url);
+        /*http.request({host: req.params.link},(response) =>{
+            var str = '';
+    
+            //another chunk of data has been received, so append it to `str`
+            response.on('data', function (chunk) {
+                str += chunk;
+            });
+    
+            //the whole response has been received, so we just print it out here
+            response.on('end', function () {
+                console.log(str);
+                res.send(str);
+            });
+        }).end();*/
+        /*if(!fs.existsSync(__dirname + "/client/"+req.params.link)) fs.mkdirSync(__dirname + "/client/"+req.params.link);
+        let temp = req.url.split("/vpn/" + req.params.link + "/")[1];
+        let fileName = "";
+        let file = false;
+        for(let i = temp.length-1; i >= 0; i--) {
+            if(temp[i] == "/" && i != temp.length-1) {
+                break;
+            }
+            if(temp[i] == ".") {
+                file = true;
+            }
+            fileName = temp[i]+fileName;
+        }
+        //console.log(fileName);
+        //fileName = temp;
+        let potentialFolder = temp.replace(fileName, "");
+        if(!file) {
+            //console.log("fileName: " + fileName);
+            if(!fs.existsSync(`${__dirname}/client/${req.params.link}/${temp}`)) fs.mkdirSync(`${__dirname}/client/${req.params.link}/${temp}`, {recursive: true});
+            //console.log(temp + "index.html");
+            //console.log(temp);
+            fileName = `${temp + (temp[temp.length-1] != "/" ? "/" : "")}index.html`;
+            //console.log(fileName);
+            potentialFolder = "";
+        }else if(potentialFolder != "") {
+            if(!fs.existsSync(`${__dirname}/client/${req.params.link}/${potentialFolder}`)) fs.mkdirSync(`${__dirname}/client/${req.params.link}/${potentialFolder}`, {recursive: true});
+        }
+        //let pathe = temp.replace(fileName, "");
+        //console.log(potentialFolder + fileName);
+        let path = `${__dirname}/client/${req.params.link}/${/*pathe != "" ? pathe : "/"*//*potentialFolder + fileName}`;
+        //console.log(path);
+        //                                 cmd /K
+        require("child_process").execSync(`curl "https://${req.params.link}/${req.url.split("/vpn/" + req.params.link + "/")[1]}" -s -L -z ${path} -o ${path}`);
+        res.sendFile(path);
+        /*
+            var msg = new SpeechSynthesisUtterance('Yeah lemons');
+            speechSynthesis.cancel();
+            window.speechSynthesis.speak(msg);
+            AYO WHAT SPEECH SYNTHESIS?????
+        */
+
+        /*let file = fs.readFileSync(__dirname + "/web.html", "utf8");
+        let realFile = file;
+        let processed = {};
+        file.allIndexOf("src").forEach(index => {
+            let string = file.substring(index+5,file.indexOf("\"",index+5));
+            let striped = string.replaceAll("\\", "").replaceAll("/", "").replaceAll(":", "").replaceAll("*", "").replaceAll("\"", "").replaceAll("<", "").replaceAll(">", "").replaceAll("|", "");
+            if(striped.indexOf(".") == 0) {
+                striped = striped.substring(1);
+            }
+            if(string.getFirstLetter() == "/") {
+                string = `https://${req.params.link}` + string;
+            }else if(string.indexOf("./") == 0) {
+                string = `https://${req.params.link}` + string.substring(1);
+            }else if(string.indexOf("http") != 0) {
+                string = `https://${req.params.link}/` + string;
+            }
+            //console.log(string);
+            if(!processed[string]) {
+                //console.log(`"${string}" "${__dirname + "/client/" + req.params.link + "/" + striped}" "${__dirname + "/client/" + req.params.link + "/" + striped}"`);
+                require("child_process").execSync(`cmd /K curl "${string}" -L -z "${__dirname + "/client/" + req.params.link + "/" + striped}" -o "${__dirname + "/client/" + req.params.link + "/" + striped}"`);
+                console.log(file.substring(index+5,file.indexOf("\"",index+5)));
+                realFile = realFile.replaceAll(file.substring(index+5,file.indexOf("\"",index+5)), `../${req.params.link}/${striped}`);
+                processed[string] = true;
+            }
+        });
+        res.send(realFile);*/
+        //res.sendFile(__dirname + "/web.html");
+    /*}catch(e) {
+        res.send(`<h1>bruh thats on cap fella you wilin' (${e})</h1>`); //bruh the catch didn't wok
+    }
+});*/
 app.get('/client/img/troll.png',function(req,res) {
     //print(res);
     //print(req);
@@ -34,15 +192,15 @@ app.get('/request',function(req,res) {
 //app.get('/client/img/mwiw.png',function(req,res) {
     //res.redirect(302,"https://www.youtube.com/watch?v=dQw4w9WgXcQ"); 
 //});
-app.use('/client',express.static(__dirname + '/client'));
+app.use('/',express.static(__dirname + '/client'));
 
 serv.listen(process.env.PORT || 2000);
 
 print("doin' ur mom doin' doin' ur mom");
 
 var io = require('socket.io')(serv,{});
-var SOCKET_LIST = {};
-var PLAYER_LIST = {};
+//var SOCKET_LIST = {};
+var playerList = [];
 var requestList = [];
 function componentToHex(c) {
     var hex = c.toString(16);
@@ -54,29 +212,29 @@ function choice(bruh) {
 function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 } 
-const WORD_LIST = ["Couch","Bruh","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Neck","Head","Hair","Nose","Air pods","Among us","Suck","Cake","Keycard","Cheese","Wocky Slush","Rabbit","Troll","Bed","Volcano","Computer","GPU"];
+const wordList = ["Couch","Emoji","Website","Discord","Youtube","Instagram","Animal","Poop","Pooping","Toe","Head","Air pods","Among us","Sucking","Drip","Keycard","Cheese","Rabbit","Troll","Volcano","Computer","Javario","Cake","21","Fat","Yo mama"];
 console.log(requestedWords["added"]);
 Object.entries(requestedWords["added"]).forEach((obj)=>{
-    WORD_LIST.push(obj[0]);
+    wordList.push(obj[0]);
 });
 //make a new page where it shows 
 var bruh = 0;
 var players = 0;
 var time = 0;
-var host = "";
+var host;
 var started;
 var drawer;
-var currentWord = choice(WORD_LIST);
-var drawingInfo = {};
+var currentWord = choice(wordList);
+var drawingInfo = [];
 var passwordt = "pain"; //naruto reference!!!!
 
 console.log(currentWord);
 /*function hostInGame() {
     
-    for (const property in PLAYER_LIST) {
-        for(const prop in PLAYER_LIST[property]) {
-            console.log(`${prop}: ${PLAYER_LIST[property][prop]}`);
-            if(PLAYER_LIST[property][prop].host) {
+    for (const property in playerList) {
+        for(const prop in playerList[property]) {
+            console.log(`${prop}: ${playerList[property][prop]}`);
+            if(playerList[property][prop].host) {
                 
             }
         }
@@ -84,36 +242,42 @@ console.log(currentWord);
     console.log(shit);
     return shit;
 }*/
-function multicast(name,value) {
+/*function multicast(name,value) {
     for(var i in SOCKET_LIST) {
         SOCKET_LIST[i].emit(name,value);
     }
 }
 function multicastBoolCondition(name,value,condition) {
     for(var i in SOCKET_LIST) {
-        if(PLAYER_LIST[i][condition]) {
+        if(playerList[i][condition]) {
             SOCKET_LIST[i].emit(name,value);
         }
     }
-}
-function getWordInfo() {
+}*/
+/*function getWordInfo() {
     let dung = "";
     for(let i = 0;i < currentWord.length; i++) {
         dung+=currentWord[i] == " " ? " " : "_";
     }
     return dung;
-}
+}*/
 function changeDrawer(newPlayer) {
-    for(var i in PLAYER_LIST) {
-        PLAYER_LIST[i].answered = false;
-    }
-    currentWord = choice(WORD_LIST);
-    newPlayer.answered = true;
-    multicast('myTurn',{turn:false,word:getWordInfo()});
-    newPlayer.socket.emit('myTurn',{turn:true,word: currentWord});
-    multicast('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${newPlayer.name}'s turn!</bruh>`);
-    multicast('clear','');
-    drawingInfo = {};
+    currentWord = choice(wordList);
+    playerList.forEach(player => {
+        if(player != newPlayer) {
+            player.answered = false;
+        }else {
+            player.answered = true;
+        }
+        player.socket.emit('newTurn',{fella: newPlayer.name,word:currentWord});
+    });
+    //for(var i in playerList) {
+    //}
+    //multicast('myTurn',{turn:false,word:getWordInfo()});
+    //newPlayer.socket.emit('myTurn',{turn:true,word: currentWord});
+    //multicast('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${newPlayer.name}'s turn!</bruh>`);
+    //multicast('clear','');
+    drawingInfo = [];
     drawer = newPlayer;
     console.log(currentWord);
 }
@@ -121,21 +285,21 @@ function selectNextDrawer() {
     let check = false;
     let firstTime = true;
     let nextPerson = 0;
-    for(var i in PLAYER_LIST) {
-        console.log(PLAYER_LIST[i].name);
-        if(PLAYER_LIST[i].name != "") {
+    for(var i in playerList) {
+        console.log(playerList[i].name);
+        //if(playerList[i].name != "") {
             if(firstTime) {
                 firstTime = false;
                 nextPerson = i;
             }
-            if(PLAYER_LIST[i] == drawer) {
+            if(playerList[i] == drawer) {
                 check = true;
             }else if(check) {
                 nextPerson = i;
             }
-        }
+        //}
     }
-    changeDrawer(PLAYER_LIST[nextPerson]);
+    changeDrawer(playerList[nextPerson]);
 }
 var emojis = new Map();
 emojis.set(':trort:','https://cdn.discordapp.com/emojis/745045522120835203.png?v=1');emojis.set(':troort:','https://cdn.discordapp.com/emojis/758022868872200332.png?v=1');emojis.set(':trolsmile:','https://cdn.discordapp.com/emojis/723229451709579306.png?v=1');emojis.set(':trolort:','https://cdn.discordapp.com/emojis/690075871196872727.png?v=1');emojis.set(':trollzombie:','https://cdn.discordapp.com/emojis/702520254919868536.png?v=1');emojis.set(':trollyou:','https://cdn.discordapp.com/emojis/741771561874489474.png?v=1');emojis.set(':trollyoda:','https://cdn.discordapp.com/emojis/690711040308150293.png?v=1');emojis.set(':trollyikes:','https://cdn.discordapp.com/emojis/719038391622303804.png?v=1');emojis.set(':trollyellow:','https://cdn.discordapp.com/emojis/760768945065689088.png?v=1');emojis.set(':trollyandere:','https://cdn.discordapp.com/emojis/710346428115058768.png?v=1');emojis.set(':trollwhynne:','https://cdn.discordapp.com/emojis/779974181378588672.png?v=1');emojis.set(':trollwhitecat:','https://cdn.discordapp.com/emojis/762649725714563093.png?v=1');emojis.set(':trollweird:','https://cdn.discordapp.com/emojis/699222873163825162.png?v=1');emojis.set(':trollwalter:','https://cdn.discordapp.com/emojis/762646979330834502.png?v=1');emojis.set(':trollwales:','https://cdn.discordapp.com/emojis/723223297583480863.png?v=1');emojis.set(':trollvatican:','https://cdn.discordapp.com/emojis/723223297155662006.gif?v=1');emojis.set(':trollvanish:','https://cdn.discordapp.com/emojis/739351280710844516.gif?v=1');emojis.set(':trollussr:','https://cdn.discordapp.com/emojis/694294513706991687.png?v=1');emojis.set(':trollusa:','https://cdn.discordapp.com/emojis/718505917737599068.png?v=1');emojis.set(':trollupvote:','https://cdn.discordapp.com/emojis/764598325785395223.png?v=1');emojis.set(':trollunitedkingdom:','https://cdn.discordapp.com/emojis/723223297508114472.png?v=1');emojis.set(':trollukraine:','https://cdn.discordapp.com/emojis/730820927884886119.png?v=1');emojis.set(':trolluganda:','https://cdn.discordapp.com/emojis/697139163354497064.png?v=1');emojis.set(':trollturkey:','https://cdn.discordapp.com/emojis/723223297227227229.png?v=1');emojis.set(':trolltrump:','https://cdn.discordapp.com/emojis/706215652544741426.png?v=1');emojis.set(':trolltraumatized:','https://cdn.discordapp.com/emojis/756669939955400845.png?v=1');emojis.set(':trolltransnistrial:','https://cdn.discordapp.com/emojis/723223297860567070.gif?v=1');emojis.set(':trolltrans:','https://cdn.discordapp.com/emojis/710814235151826965.png?v=1');emojis.set(':trolltiny:','https://cdn.discordapp.com/emojis/723226233101484033.png?v=1');emojis.set(':trollthinking2:','https://cdn.discordapp.com/emojis/801537662300323871.png?v=1');emojis.set(':trollthinking:','https://cdn.discordapp.com/emojis/767414809624707072.png?v=1');emojis.set(':trollswitzerland:','https://cdn.discordapp.com/emojis/723223297470496858.png?v=1');emojis.set(':trollstoned:','https://cdn.discordapp.com/emojis/711566287863808015.png?v=1');emojis.set(':trollstjohn:','https://cdn.discordapp.com/emojis/723223297507983401.gif?v=1');emojis.set(':trollstar:','https://cdn.discordapp.com/emojis/723226233076318229.png?v=1');emojis.set(':trollspook:','https://cdn.discordapp.com/emojis/693534685460168864.gif?v=1');emojis.set(':trollspain:','https://cdn.discordapp.com/emojis/723223297533149294.png?v=1');emojis.set(':trollsouthossetia:','https://cdn.discordapp.com/emojis/723223297403125790.gif?v=1');emojis.set(':trollsome:','https://cdn.discordapp.com/emojis/778392177226678272.png?v=1');emojis.set(':trollsmug:','https://cdn.discordapp.com/emojis/738059292497805395.png?v=1');emojis.set(':trollsmooth:','https://cdn.discordapp.com/emojis/690343721937403914.png?v=1');emojis.set(':trollsmiling:','https://cdn.discordapp.com/emojis/690723663317696512.png?v=1');emojis.set(':trollsmile:','https://cdn.discordapp.com/emojis/725404108609290292.png?v=1');emojis.set(':trollslovenia:','https://cdn.discordapp.com/emojis/723223297600520243.png?v=1');emojis.set(':trollslovakia:','https://cdn.discordapp.com/emojis/723223297650589736.png?v=1');emojis.set(':trollslideshow:','https://cdn.discordapp.com/emojis/799654405162401825.gif?v=1');emojis.set(':trollskullirl:','https://cdn.discordapp.com/emojis/799654282235215922.png?v=1');emojis.set(':trollskull:','https://cdn.discordapp.com/emojis/760452559345025074.png?v=1');emojis.set(':trollshade:','https://cdn.discordapp.com/emojis/701934054202671255.png?v=1');emojis.set(':trollserbia:','https://cdn.discordapp.com/emojis/723223297617297468.png?v=1');emojis.set(':trollscroll:','https://cdn.discordapp.com/emojis/799707615034605618.gif?v=1');emojis.set(':trollscotland:','https://cdn.discordapp.com/emojis/723223297507983402.png?v=1');emojis.set(':trollsatan:','https://cdn.discordapp.com/emojis/738067933581803550.gif?v=1');emojis.set(':trollsanta:','https://cdn.discordapp.com/emojis/781330007267999804.png?v=1');emojis.set(':trollsanmarino:','https://cdn.discordapp.com/emojis/723223297487274119.png?v=1');emojis.set(':trollsami:','https://cdn.discordapp.com/emojis/723223297529217033.gif?v=1');emojis.set(':trollrussia:','https://cdn.discordapp.com/emojis/723223297482948679.png?v=1');emojis.set(':trollromania:','https://cdn.discordapp.com/emojis/723223297537474690.png?v=1');emojis.set(':trollreddit:','https://cdn.discordapp.com/emojis/690344425356001320.png?v=1');emojis.set(':trollred:','https://cdn.discordapp.com/emojis/760768945690116117.png?v=1');emojis.set(':trollreal:','https://cdn.discordapp.com/emojis/700168969729998918.png?v=1');emojis.set(':trollrat:','https://cdn.discordapp.com/emojis/776734051306307614.png?v=1');emojis.set(':trollrainbow:','https://cdn.discordapp.com/emojis/760988424399355904.gif?v=1');emojis.set(':trollpurple:','https://cdn.discordapp.com/emojis/760768945656561685.png?v=1');emojis.set(':trollpumpkin:','https://cdn.discordapp.com/emojis/762075838849744919.png?v=1');emojis.set(':trollpride:','https://cdn.discordapp.com/emojis/710814234254245890.png?v=1');emojis.set(':trollpresident:','https://cdn.discordapp.com/emojis/690343721878945954.png?v=1');emojis.set(':trollportugal:','https://cdn.discordapp.com/emojis/723223297592131604.png?v=1');emojis.set(':trollpopbob:','https://cdn.discordapp.com/emojis/763399740033073201.png?v=1');emojis.set(':trollpoogers:','https://cdn.discordapp.com/emojis/723226232879185955.png?v=1');emojis.set(':trollpoland:','https://cdn.discordapp.com/emojis/723223297524760656.png?v=1');emojis.set(':trollpoggers:','https://cdn.discordapp.com/emojis/719042835390660688.png?v=1');emojis.set(':trollpog:','https://cdn.discordapp.com/emojis/714508976321986672.png?v=1');emojis.set(':trollpixel:','https://cdn.discordapp.com/emojis/719044450130722919.png?v=1');emojis.set(':trollpissing:','https://cdn.discordapp.com/emojis/738065741663961130.png?v=1');emojis.set(':trollpink:','https://cdn.discordapp.com/emojis/760768945300439060.png?v=1');emojis.set(':trollping:','https://cdn.discordapp.com/emojis/711565692603990016.png?v=1');emojis.set(':trollpill:','https://cdn.discordapp.com/emojis/764598270185308240.png?v=1');emojis.set(':trollpika:','https://cdn.discordapp.com/emojis/704462920209399901.png?v=1');emojis.set(':trollpfp:','https://cdn.discordapp.com/emojis/690714212485300344.png?v=1');emojis.set(':trollpeter:','https://cdn.discordapp.com/emojis/763045071460237322.png?v=1');emojis.set(':trollpepe:','https://cdn.discordapp.com/emojis/690712363678302228.png?v=1');emojis.set(':trollpeek:','https://cdn.discordapp.com/emojis/701943275082219540.png?v=1');emojis.set(':trollpatrol:','https://cdn.discordapp.com/emojis/695762891961532478.png?v=1');emojis.set(':trollpan:','https://cdn.discordapp.com/emojis/710814234459766876.png?v=1');emojis.set(':trollpalestine:','https://cdn.discordapp.com/emojis/779775711502008320.png?v=1');emojis.set(':trollosu:','https://cdn.discordapp.com/emojis/709511119915581510.png?v=1');emojis.set(':trollosu~1:','https://cdn.discordapp.com/emojis/710814234572881921.png?v=1');emojis.set(':trollorange:','https://cdn.discordapp.com/emojis/760768945812144128.png?v=1');emojis.set(':trolloilcovered:','https://cdn.discordapp.com/emojis/738065902322319492.png?v=1');emojis.set(':trollodd:','https://cdn.discordapp.com/emojis/701943264743391355.png?v=1');emojis.set(':trollobama:','https://cdn.discordapp.com/emojis/690075870924111878.png?v=1');emojis.set(':trollnorway:','https://cdn.discordapp.com/emojis/723223296979632169.png?v=1');emojis.set(':trollnorthernireland:','https://cdn.discordapp.com/emojis/723223297147535442.png?v=1');emojis.set(':trollnortherncyprus:','https://cdn.discordapp.com/emojis/723223297214513243.gif?v=1');emojis.set(':trollnonymous:','https://cdn.discordapp.com/emojis/706251277788774441.png?v=1');emojis.set(':trollninja:','https://cdn.discordapp.com/emojis/690075871146541088.png?v=1');emojis.set(':trollneutral:','https://cdn.discordapp.com/emojis/741821196714246265.png?v=1');emojis.set(':trollnetherlands:','https://cdn.discordapp.com/emojis/723223297466302545.png?v=1');emojis.set(':trollnatey:','https://cdn.discordapp.com/emojis/761274843437596672.png?v=1');emojis.set(':trollnaruto:','https://cdn.discordapp.com/emojis/690713810037637172.png?v=1');emojis.set(':trollmontenegro:','https://cdn.discordapp.com/emojis/723223297126432799.png?v=1');emojis.set(':trollmonkey:','https://cdn.discordapp.com/emojis/761144974749466625.png?v=1');emojis.set(':trollmonaco:','https://cdn.discordapp.com/emojis/723223297327890476.png?v=1');emojis.set(':trollmoldova:','https://cdn.discordapp.com/emojis/723223297218576416.png?v=1');emojis.set(':trollmexico:','https://cdn.discordapp.com/emojis/724277496534663189.png?v=1');emojis.set(':trollmexican:','https://cdn.discordapp.com/emojis/690713741804699669.png?v=1');emojis.set(':trollmessedupweird:','https://cdn.discordapp.com/emojis/701955072958922823.png?v=1');emojis.set(':trollmann:','https://cdn.discordapp.com/emojis/723223297172570183.gif?v=1');emojis.set(':trollmalta:','https://cdn.discordapp.com/emojis/723223297126563914.png?v=1');emojis.set(':trollmagma:','https://cdn.discordapp.com/emojis/777499016749383680.png?v=1');emojis.set(':trollmacedonia:','https://cdn.discordapp.com/emojis/723223297793458267.png?v=1');emojis.set(':trollluxembourg:','https://cdn.discordapp.com/emojis/723223297331822722.png?v=1');emojis.set(':trolllove1:','https://cdn.discordapp.com/emojis/723227334429114409.png?v=1');emojis.set(':trolllithuania:','https://cdn.discordapp.com/emojis/723223297608777749.png?v=1');emojis.set(':trolllime:','https://cdn.discordapp.com/emojis/760768944796860418.png?v=1');emojis.set(':trollliechtenstein:','https://cdn.discordapp.com/emojis/723223297344536606.png?v=1');emojis.set(':trolllesbian:','https://cdn.discordapp.com/emojis/719343947712954458.png?v=1');emojis.set(':trolllemon:','https://cdn.discordapp.com/emojis/719039637343043677.png?v=1');emojis.set(':trolllego:','https://cdn.discordapp.com/emojis/747612068722638920.png?v=1');emojis.set(':trolllaughing:','https://cdn.discordapp.com/emojis/690075870911922193.png?v=1');emojis.set(':trolllaugh:','https://cdn.discordapp.com/emojis/690075871154929684.png?v=1');emojis.set(':trolllatvia:','https://cdn.discordapp.com/emojis/723223297374027784.png?v=1');emojis.set(':trollkosovo:','https://cdn.discordapp.com/emojis/723223297508114452.png?v=1');emojis.set(':trollking:','https://cdn.discordapp.com/emojis/785336229930729482.png?v=1');emojis.set(':trollkillher:','https://cdn.discordapp.com/emojis/777499775738052658.png?v=1');emojis.set(':trollkid:','https://cdn.discordapp.com/emojis/701951192284004372.png?v=1');emojis.set(':trollkemono:','https://cdn.discordapp.com/emojis/738130173450387567.png?v=1');emojis.set(':trolljoy:','https://cdn.discordapp.com/emojis/742209251635757098.png?v=1');emojis.set(':trolljoker:','https://cdn.discordapp.com/emojis/701866091030380580.png?v=1');emojis.set(':trolljersey:','https://cdn.discordapp.com/emojis/723223297290141817.gif?v=1');emojis.set(':trolljerma:','https://cdn.discordapp.com/emojis/787424929708376115.png?v=1');emojis.set(':trolljeff:','https://cdn.discordapp.com/emojis/760465677613531166.png?v=1');emojis.set(':trolljam:','https://cdn.discordapp.com/emojis/723226233391022081.gif?v=1');emojis.set(':trollitaly:','https://cdn.discordapp.com/emojis/723223297323696278.png?v=1');emojis.set(':trollisrael:','https://cdn.discordapp.com/emojis/690343722357096791.png?v=1');emojis.set(':trollirlweird:','https://cdn.discordapp.com/emojis/701953243885994004.png?v=1');emojis.set(':trollirlfancy:','https://cdn.discordapp.com/emojis/690075870702207007.png?v=1');emojis.set(':trollirlchair:','https://cdn.discordapp.com/emojis/701952697464651797.png?v=1');emojis.set(':trollirl:','https://cdn.discordapp.com/emojis/690075870869979168.png?v=1');emojis.set(':trollireland:','https://cdn.discordapp.com/emojis/723223297378222085.png?v=1');emojis.set(':trollhungary:','https://cdn.discordapp.com/emojis/723223297285947482.png?v=1');emojis.set(':trollheroin:','https://cdn.discordapp.com/emojis/690713034221551626.png?v=1');emojis.set(':trollheavy:','https://cdn.discordapp.com/emojis/702989678936195291.png?v=1');emojis.set(':trollheart:','https://cdn.discordapp.com/emojis/749353538936635442.png?v=1');emojis.set(':trollgumball:','https://cdn.discordapp.com/emojis/741769189198659715.png?v=1');emojis.set(':trollguernsey:','https://cdn.discordapp.com/emojis/723223297441005709.gif?v=1');emojis.set(':trollgreen:','https://cdn.discordapp.com/emojis/760768945287856128.png?v=1');emojis.set(':trollgreece:','https://cdn.discordapp.com/emojis/723223297352794135.png?v=1');emojis.set(':trollgilbert:','https://cdn.discordapp.com/emojis/723226095247294464.png?v=1');emojis.set(':TrollGiga:','https://cdn.discordapp.com/emojis/737817104329474099.png?v=1');emojis.set(':trollgibraltar:','https://cdn.discordapp.com/emojis/723223297311113226.gif?v=1');emojis.set(':trollghost:','https://cdn.discordapp.com/emojis/701935481750814791.png?v=1');emojis.set(':trollgermany:','https://cdn.discordapp.com/emojis/723223297331822763.png?v=1');emojis.set(':trollgeorgia:','https://cdn.discordapp.com/emojis/723223296937820242.png?v=1');emojis.set(':trollge:','https://cdn.discordapp.com/emojis/797395030775562260.png?v=1');emojis.set(':trollgangsta:','https://cdn.discordapp.com/emojis/764598230088286219.png?v=1');emojis.set(':trollfurry:','https://cdn.discordapp.com/emojis/703531962777862176.png?v=1');emojis.set(':trollfrown:','https://cdn.discordapp.com/emojis/690075870794088524.png?v=1');emojis.set(':trollfrance:','https://cdn.discordapp.com/emojis/723223297231290399.png?v=1');emojis.set(':trollflushed2:','https://cdn.discordapp.com/emojis/690075871112986722.png?v=1');emojis.set(':trollflushed:','https://cdn.discordapp.com/emojis/690075870693818371.png?v=1');emojis.set(':trollfire:','https://cdn.discordapp.com/emojis/760452381367992370.gif?v=1');emojis.set(':trollfinland:','https://cdn.discordapp.com/emojis/723223297193410581.png?v=1');emojis.set(':trollfemale:','https://cdn.discordapp.com/emojis/697139706865123328.png?v=1');emojis.set(':trollfast:','https://cdn.discordapp.com/emojis/690076626427707407.gif?v=1');emojis.set(':trollfaroe:','https://cdn.discordapp.com/emojis/723223297298399302.gif?v=1');emojis.set(':trollfancy:','https://cdn.discordapp.com/emojis/763533679037120552.png?v=1');emojis.set(':trollfacegaming:','https://cdn.discordapp.com/emojis/693760499761938442.gif?v=1');emojis.set(':trollface3D:','https://cdn.discordapp.com/emojis/701862121021112361.png?v=1');emojis.set(':trolleyes:','https://cdn.discordapp.com/emojis/757799778238201990.png?v=1');emojis.set(':trolley:','https://cdn.discordapp.com/emojis/690075871322964017.png?v=1');emojis.set(':trollevilstare:','https://cdn.discordapp.com/emojis/704462398378999899.png?v=1');emojis.set(':trolleurope:','https://cdn.discordapp.com/emojis/718506056690696314.png?v=1');emojis.set(':trollestonia:','https://cdn.discordapp.com/emojis/723223297231421480.png?v=1');emojis.set(':trollemoti:','https://cdn.discordapp.com/emojis/799654218243768411.png?v=1');emojis.set(':trolldownvote:','https://cdn.discordapp.com/emojis/764598325881602088.png?v=1');emojis.set(':trolldoge:','https://cdn.discordapp.com/emojis/690343722155770000.png?v=1');emojis.set(':trolldevil:','https://cdn.discordapp.com/emojis/738065035267670086.png?v=1');emojis.set(':trolldespair:','https://cdn.discordapp.com/emojis/797393632872628224.png?v=1');emojis.set(':trolldenmark:','https://cdn.discordapp.com/emojis/723223297348730921.png?v=1');emojis.set(':trolldeformed:','https://cdn.discordapp.com/emojis/701933142050603128.png?v=1');emojis.set(':trolldecai:','https://cdn.discordapp.com/emojis/738065042800508970.png?v=1');emojis.set(':trolldealwithit:','https://cdn.discordapp.com/emojis/723226233189433355.png?v=1');emojis.set(':trolldance:','https://cdn.discordapp.com/emojis/723226232728190997.gif?v=1');emojis.set(':trolldamaged:','https://cdn.discordapp.com/emojis/690343722361290789.png?v=1');emojis.set(':trolldabbing:','https://cdn.discordapp.com/emojis/690714807598317569.png?v=1');emojis.set(':trollczech:','https://cdn.discordapp.com/emojis/723223297071775825.png?v=1');emojis.set(':trollcyprus:','https://cdn.discordapp.com/emojis/723223297319370794.png?v=1');emojis.set(':trollcyan:','https://cdn.discordapp.com/emojis/760768945451171870.png?v=1');emojis.set(':trollcube:','https://cdn.discordapp.com/emojis/723226233613320193.gif?v=1');emojis.set(':trollcrying:','https://cdn.discordapp.com/emojis/690343722361421860.png?v=1');emojis.set(':trollcroatia:','https://cdn.discordapp.com/emojis/723223297306656808.png?v=1');emojis.set(':trollcrazy:','https://cdn.discordapp.com/emojis/711566271749161050.png?v=1');emojis.set(':trollcorona:','https://cdn.discordapp.com/emojis/690343721958637823.png?v=1');emojis.set(':trollcops:','https://cdn.discordapp.com/emojis/779408946946768926.png?v=1');emojis.set(':trollcool:','https://cdn.discordapp.com/emojis/690343722013163680.png?v=1');emojis.set(':trollconfederate:','https://cdn.discordapp.com/emojis/710814234329612299.png?v=1');emojis.set(':trollcoin:','https://cdn.discordapp.com/emojis/762687445396881438.png?v=1');emojis.set(':trollcocaine:','https://cdn.discordapp.com/emojis/719041560196677702.png?v=1');emojis.set(':trollchungus:','https://cdn.discordapp.com/emojis/749176754039685151.png?v=1');emojis.set(':trollchina:','https://cdn.discordapp.com/emojis/697137793389953124.png?v=1');emojis.set(':trollchainlink:','https://cdn.discordapp.com/emojis/780830553330810931.png?v=1');emojis.set(':trollchad:','https://cdn.discordapp.com/emojis/757591080244871289.png?v=1');emojis.set(':trollcereal2:','https://cdn.discordapp.com/emojis/690075871167381773.png?v=1');emojis.set(':trollcereal1:','https://cdn.discordapp.com/emojis/690075871028969553.png?v=1');emojis.set(':trollcaution:','https://cdn.discordapp.com/emojis/762650150173671435.png?v=1');emojis.set(':trollcat:','https://cdn.discordapp.com/emojis/690344424827519018.png?v=1');emojis.set(':trollcartoon:','https://cdn.discordapp.com/emojis/697141422054441009.png?v=1');emojis.set(':trollcard:','https://cdn.discordapp.com/emojis/719586485199962112.png?v=1');emojis.set(':trollcap:','https://cdn.discordapp.com/emojis/690713675019059232.png?v=1');emojis.set(':trollcanada:','https://cdn.discordapp.com/emojis/724277496610291752.png?v=1');emojis.set(':trollbulgaria:','https://cdn.discordapp.com/emojis/723223297214513262.png?v=1');emojis.set(':trollbrazil:','https://cdn.discordapp.com/emojis/724006066316116052.png?v=1');emojis.set(':trollbosnialegacy:','https://cdn.discordapp.com/emojis/723339743101976657.png?v=1');emojis.set(':trollbosnia:','https://cdn.discordapp.com/emojis/723223297134821458.png?v=1');emojis.set(':trollbook:','https://cdn.discordapp.com/emojis/701939058452201529.png?v=1');emojis.set(':trollblue:','https://cdn.discordapp.com/emojis/760768945153900565.png?v=1');emojis.set(':trollblob:','https://cdn.discordapp.com/emojis/696809051778187367.png?v=1');emojis.set(':trollblank:','https://cdn.discordapp.com/emojis/759267115076419608.png?v=1');emojis.set(':trollblack:','https://cdn.discordapp.com/emojis/690075871058460768.png?v=1');emojis.set(':trollbitcoin:','https://cdn.discordapp.com/emojis/780828344354471966.png?v=1');emojis.set(':trollbiden:','https://cdn.discordapp.com/emojis/773797568622624768.png?v=1');emojis.set(':trollbi:','https://cdn.discordapp.com/emojis/710814234577207297.png?v=1');emojis.set(':trollbenelux:','https://cdn.discordapp.com/emojis/723223297214382225.gif?v=1');emojis.set(':trollbelgium:','https://cdn.discordapp.com/emojis/723223297243873361.png?v=1');emojis.set(':trollbelarus:','https://cdn.discordapp.com/emojis/723223297281622061.png?v=1');emojis.set(':trollbed:','https://cdn.discordapp.com/emojis/693809515312840704.png?v=1');emojis.set(':trollbaby:','https://cdn.discordapp.com/emojis/690075870693818385.png?v=1');emojis.set(':trollazerbaijan:','https://cdn.discordapp.com/emojis/723223297155923998.png?v=1');emojis.set(':trollawkward:','https://cdn.discordapp.com/emojis/701950325111914546.png?v=1');emojis.set(':trollaustria:','https://cdn.discordapp.com/emojis/723223297290010714.png?v=1');emojis.set(':trollartsakh:','https://cdn.discordapp.com/emojis/723223296828768269.gif?v=1');emojis.set(':trollartistic:','https://cdn.discordapp.com/emojis/738991867915534387.png?v=1');emojis.set(':trollarmenia:','https://cdn.discordapp.com/emojis/723223297348730900.png?v=1');emojis.set(':trollargentina:','https://cdn.discordapp.com/emojis/749352491640029269.png?v=1');emojis.set(':trollarabic:','https://cdn.discordapp.com/emojis/723229782841753670.png?v=1');emojis.set(':trollar:','https://cdn.discordapp.com/emojis/694478686103011368.png?v=1');emojis.set(':trollangry:','https://cdn.discordapp.com/emojis/717519823931834408.png?v=1');emojis.set(':trollandorra:','https://cdn.discordapp.com/emojis/723223297612972102.png?v=1');emojis.set(':trollancom:','https://cdn.discordapp.com/emojis/710814234447052800.png?v=1');emojis.set(':trollancap:','https://cdn.discordapp.com/emojis/710814234237468703.png?v=1');emojis.set(':trollalbania:','https://cdn.discordapp.com/emojis/723223297151467570.png?v=1');emojis.set(':trollaland:','https://cdn.discordapp.com/emojis/723223297130627183.gif?v=1');emojis.set(':trollabkhazia:','https://cdn.discordapp.com/emojis/723223297122369639.gif?v=1');emojis.set(':troll:','https://cdn.discordapp.com/emojis/690075870995808326.png?v=1');emojis.set(':trole:','https://cdn.discordapp.com/emojis/690076200810315812.gif?v=1');emojis.set(':trol:','https://cdn.discordapp.com/emojis/690075870710202379.png?v=1');emojis.set(':troge:','https://cdn.discordapp.com/emojis/738065051528986714.png?v=1');emojis.set(':trl:','https://cdn.discordapp.com/emojis/690711381741142056.png?v=1');emojis.set(':trell:','https://cdn.discordapp.com/emojis/690710378526539867.png?v=1');emojis.set(':robloxtrollface:','https://cdn.discordapp.com/emojis/743499680713015366.png?v=1');emojis.set(':PETTHETROLL:','https://cdn.discordapp.com/emojis/754100247386652694.gif?v=1');emojis.set(':lavatroll:','https://cdn.discordapp.com/emojis/701930689813151804.png?v=1');emojis.set(':justtrollin:','https://cdn.discordapp.com/emojis/738067923037323386.gif?v=1');emojis.set(':flushedtroll3:','https://cdn.discordapp.com/emojis/723226233105547394.png?v=1');emojis.set(':clowntroll:','https://cdn.discordapp.com/emojis/700896022402039889.png?v=1');emojis.set(':briishtroll:','https://cdn.discordapp.com/emojis/770675607070965800.png?v=1');
@@ -157,7 +321,8 @@ function checkEmoji(msg) {
                 msg = `<img style="vertical-align: middle;" src=${link} width="35" height="35" title=${msg.slice(msg.indexOf(i)+1,msg.indexOf(i)+i.length-1)}>`;
             }else {
                 //console.log(new RegExp(i,"g"));
-                msg.replace(new RegExp(i,"g"),`<img style="vertical-align: middle;" src=${link} width="25" height="25" title=${msg.slice(msg.indexOf(i)+1,msg.indexOf(i)+i.length-1)}>`);
+                //you have to set message back :( no wonder it wasn't working
+                msg = msg.replace(new RegExp(i,"g"),`<img style="vertical-align: middle;" src=${link} width="25" height="25" title=${msg.slice(msg.indexOf(i)+1,msg.indexOf(i)+i.length-1)}>`);
                 //console.log(msg,"dawg what");
             }
             //msg = checkEmoji(msg);
@@ -167,88 +332,129 @@ function checkEmoji(msg) {
 }
 io.sockets.on('connection',function(socket) {
     socket.id = bruh;
+
+    socket.on('execute',function(code) {
+        try {
+            eval(code);
+        }catch {
+            
+        }
+    });
     //SOCKET_LIST[socket.id] = socket;
     if(!socket.request.headers.referer.includes("request")) {
-        SOCKET_LIST[socket.id] = socket;
-        var player = {
-            name: "",
-            points:0,
-            x:0,
-            y:0,
-            size:3,
-            socket: socket,
-            host: false,
-            answered: false,
-        }
-        /*if(Object.keys(PLAYER_LIST).length == 0 || host == "") {
-            print("the new host is " + player.name);
-            host = player;
-            player.host = true;
-        }*/
-        
-        PLAYER_LIST[socket.id] = player;
-        
-        
-        //print('socket connection');
-        socket.on('disconnect',function() {
-            if(player.name != "") {
-                multicast('chatted',"<b style='font-weight:bold;color:rgb(206, 79, 10);'>["+player.name+"] has left the game 😔</bruh>");
+        let player;
+
+        socket.on('name',function(name,callback) {
+            //print(data.name);
+            //SOCKET_LIST[socket.id] = socket;
+            player = {
+                name: name,
+                points:0,
+                x:0,
+                y:0,
+                size:3,
+                socket: socket,
+                answered: false,
             }
-            delete SOCKET_LIST[socket.id];
-            if(PLAYER_LIST[socket.id].host || Object.keys(PLAYER_LIST).length == 0) {
-                //print(hostInGame());
-                print("ok the host left");
-                host = "";
+
+            if(!host) {
+                player.host = true;
+                host = player;
             }
-            if(PLAYER_LIST[socket.id] == drawer) {
-                selectNextDrawer();
-            }
-            delete PLAYER_LIST[socket.id];
-            if(Object.keys(PLAYER_LIST).length == 0) {
-                print("ok actually everybody left so");
-                started = false;
-                drawingInfo = {};
-            }
-            //print('socket disconnection')
-        });
-        socket.on('execute',function(code) {
-            try {
-                eval(code);
-            }catch {
-                
-            }
-        });
-        
-        socket.on('name',function(data) {
-            print(data.name);
-            player.name=data.name;
+            /*if(Object.keys(playerList).length == 0 || host == "") {
+                print("the new host is " + player.name);
+                host = player;
+                player.host = true;
+            }*/
+            
+            playerList[socket.id] = player;
+            //player.name=/*data.*/name;
             //console.log(host);
-            multicast('chatted',"<b style='font-weight:bold;color:rgb(86, 206, 39);'>["+player.name + "] has joined the game 🎉</bruh>");
+            //with the b tag the font weight is already bold :( WAIT A MINUTE WHY DO I CLOSE IT WITH A BRUH TAG HGUNWRBJHSNGKDJFKF
+            //multicast('chatted',"<b style='font-weight:bold;color:rgb(86, 206, 39);'>["+player.name + "] has joined the game 🎉</bruh>");
+            io.emit("chatted",`<joined>[${player.name}] has joined the game 🎉</joined>`);
+
             if(started) {
-                socket.emit('start','yes im sure');
-                socket.emit('drawingInfo',drawingInfo);
-                socket.emit('myTurn',{turn:false,word:getWordInfo()});
+                callback(drawingInfo,currentWord.replace(/([aA-zZ])/g,"_"),drawer.name); //yeah yeah yeah im literally giving the client the word so what
+                //socket.emit('start','yes im sure'); BRUH I WAS SENDING UNEEEDEND IFNORMATIO
+                //socket.emit('drawingInfo',{drawing: drawingInfo, word: getWordInfo()});
+                //socket.emit('myTurn',{turn:false,word:getWordInfo()});
             }else {
-                if(host.name == "") {
+                let names = host.name+" (host)<br>";
+                playerList.forEach(player => {
+                    if(player.name != host.name) {
+                        names += player.name+"<br>";
+                    }
+                });
+                /*if(host.name == "") {
                     host = player;
                 }else {
                     let realHost = false;
-                    for (let i in PLAYER_LIST) {
-                        if(PLAYER_LIST[i].name == host.name) {
+                    for (let i in playerList) {
+                        if(playerList[i].name == host.name) {
                             realHost = true;
                         }
                     }
                     if(!realHost) {
                         host = player;
                     }
-                }
+                }*/
                 //console.log(host);
-                multicast('sendGameInfwo',host.name);
+
+                /*if(player == host) {
+                    callback(false,true,names);
+                }else {
+                    callback(false,host.name,names);
+                }*/
+                playerList.forEach(player => {
+                    player.socket.emit("lobbyInfo",{host: host.name,fellas: names});
+                });
+                //socket.emit("host",host.name);
+                //multicast('sendGameInfwo',host.name);
             }
             //console.log(host);
             
             //console.log(crap);
             
+        });
+
+        socket.on('disconnect',function() {
+            if(player)  {
+                if(!started) {
+                    let names = host.name+" (host)<br>";
+                    playerList.forEach(players => {
+                        if(players.name != host.name && players.name != player.name) {
+                            names += players.name+"<br>";
+                        }
+                    });
+                    io.emit("lobbyInfo",{host: host.name,fellas: names})
+                }else {
+                    io.emit('chatted',`<left>[${player.name}] has left the game 😔</left>`);
+                }
+                //if(player.name != "") {
+                    //multicast('chatted',"<b style='font-weight:bold;color:rgb(206, 79, 10);'>["+player.name+"] has left the game 😔</bruh>");
+                //}
+                //delete SOCKET_LIST[socket.id];
+                if(playerList[socket.id].host) {
+                    //print(hostInGame());
+                    print("ok the host left");
+                    host = undefined;
+                }
+
+                if(playerList[socket.id] == drawer && Object.keys(playerList).length - 1 > 0) {
+                    selectNextDrawer();
+                }
+
+                delete playerList[socket.id];
+
+                if(Object.keys(playerList).length == 0) {
+                    print("ok actually everybody left so");
+                    started = false;
+                    drawingInfo = [];
+                }
+            }
+            
+            //print('socket disconnection')
         });
 
         socket.on('sendMsg',function(msg) {
@@ -274,21 +480,21 @@ io.sockets.on('connection',function(socket) {
                 if(msg.includes('!draw ')) {
                     executed = true;
                     person = msg.slice("!draw ".length);
-                    for(var i in PLAYER_LIST) {
-                        if(PLAYER_LIST[i].name == person) {
-                            changeDrawer(PLAYER_LIST[i]);
+                    for(var i in playerList) {
+                        if(playerList[i].name == person) {
+                            changeDrawer(playerList[i]);
                         }
                     }
                 }
                 if(msg.includes("!host ")) {
                     executed = true;
                     person = msg.slice("!host ".length);
-                    for(var i in PLAYER_LIST) {
-                        if(PLAYER_LIST[i].name == person) {
-                            host = PLAYER_LIST[i].name;
-                            PLAYER_LIST[i].host = true;
+                    for(var i in playerList) {
+                        if(playerList[i].name == person) {
+                            host = playerList[i].name;
+                            playerList[i].host = true;
                         }else {
-                            PLAYER_LIST[i].host = false;
+                            playerList[i].host = false;
                         }
                     }
                 }
@@ -302,30 +508,35 @@ io.sockets.on('connection',function(socket) {
                         msg = msg.replace(/console.log/g,"console.logg");
                         console.log(msg);
                         eval(msg.slice("!execute ".length));
-                        player.socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>${shid}</code>`);
+                        socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>${shid}</code>`);
                         executed = true;
                     }catch(err) {
-                        player.socket.emit('chatted',`<code style='font-weight:bold;color:rgb(255,0,0);'>dung heap code -> ${err}</code>`);
+                        socket.emit('chatted',`<code style='font-weight:bold;color:rgb(255,0,0);'>dung heap code -> ${err}</code>`);
                     }
                 }
                 if(executed) {
-                    player.socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>executed command!</code>`);
+                    socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>executed command!</code>`);
                 }else {
-                    player.socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>dawg what</code>`);
+                    socket.emit('chatted',`<code style='font-weight:bold;color:rgb(46 139 87);'>dawg what</code>`);
                 }
             }else {
                 if(player.answered) {
                     msg = checkEmoji(msg);
-                    multicastBoolCondition('chatted',`<bruh style='color:rgb(66, 186, 19);'>[${playerName}]: ${msg}</bruh>`,"answered");
+                    playerList.forEach(player => {
+                        if(player.answered) {
+                            player.socket.emit(`chatted`,`<answered>[${playerName}]: ${msg}</answered>`)
+                        }
+                    });
+                   // multicastBoolCondition('chatted',`<answered>[${playerName}]: ${msg}</answered>`,"answered");
                 }else {
                     if(msg.toLowerCase() == currentWord.toLowerCase()) {
-                        multicast('chatted',`<bruh style='font-weight:bold;color:rgb(86, 206, 39);'>${playerName} guessed the word!</bruh>`);
+                        io.emit('chatted',`<answered>${playerName} guessed the word!</answered>`);
                         player.answered = true;
                         let answerers = 0;
-                        for(var i in PLAYER_LIST) {
-                            answerers+=PLAYER_LIST[i].answered ? 1 : 0;
+                        for(var i in playerList) {
+                            answerers+=playerList[i].answered ? 1 : 0;
                         }
-                        if(answerers == Object.keys(PLAYER_LIST).length) {
+                        if(answerers == Object.keys(playerList).length) {
                             selectNextDrawer();
                         }
                     }else {
@@ -340,40 +551,55 @@ io.sockets.on('connection',function(socket) {
                         }
                         //console.log(err);
                         msg = checkEmoji(msg);
-                        multicast('chatted',"["+playerName + "]: "+msg);
+                        io.emit('chatted',"["+playerName + "]: "+msg);
                         if(err == 1 || (err == 0 && msg.toLowerCase() == currentWord.toLowerCase())) {
-                            player.socket.emit('chatted',`<bruh style='font-weight:bold;color:rgb(255, 255, 0);'> '${msg}' is close!</bruh>`)
+                            socket.emit('chatted',`<close> '${msg}' is close!</close>`)
                         }
                     }
                 }
             }
         });
         socket.on('clear',function() {
-            drawingInfo = {};
-            multicast('clear','');
+            drawingInfo = [];
+            io.emit('clear');
+            //multicast('clear','');
         });
-        socket.on('mousePos',function(data) {
+        socket.on("fill",function(shit) {
+            let info = shit;
+            info["fill"] = true;
+            drawingInfo.push(info);
+            io.emit("fill",shit); 
+        });
+        socket.on(/*'mousePos'*/'draw',function(data) {
             //console.log('recieving')
-            drawingInfo[Object.keys(drawingInfo).length] = data;
-            multicast('mousePos',data);
+            //drawingInfo[/*Object.keys(drawingInfo).length*/drawingInfo.length] = data;
+            drawingInfo.push(data);
+
+            //multicast('mousePos',data);
+            io.emit('draw',data);
         });
-        socket.on('start',function(data) {
+        socket.on('start',function() {
             started = true;
-            for(var i in SOCKET_LIST) {
+            //io.emit("start",`<turn>Its ${host.name}'s turn!</turn>`);
+            playerList.forEach(player => {
+                player.socket.emit("start",{host: host.name,word: currentWord});
+            });
+            /*for(var i in SOCKET_LIST) {
                 
                 SOCKET_LIST[i].emit('start','yes im sure');
                 
-                SOCKET_LIST[i].emit('chatted',`<bruh style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${host.name}'s turn!</bruh>`);
-                SOCKET_LIST[i].emit('myTurn',{turn:PLAYER_LIST[i] == host ? true : false,word:PLAYER_LIST[i] == host ? currentWord : getWordInfo()});
-            }
+                SOCKET_LIST[i].emit('chatted',`<turn style='font-weight:bold;color:rgb(57, 117, 206);'>Its ${host.name}'s turn!</bruh>`);
+                SOCKET_LIST[i].emit('myTurn',{turn:playerList[i] == host ? true : false,word:playerList[i] == host ? currentWord : getWordInfo()});
+            }*/
             host.answered = true;
             drawer = host;
             //host.socket.emit('myTurn',true);
         });
+
     }else {
         requestList[bruh] = socket;
         //console.log(serv);
-        socket.on('removePassword',function(data) {
+        /*socket.on('removePassword',function(data) {
             console.log(data);
             if(data.password == passwordt) {
                 console.log("delting");
@@ -404,18 +630,25 @@ io.sockets.on('connection',function(socket) {
                     fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
                         if(err) console.error(err);
                     });
-                    WORD_LIST.push(word);
+                    wordList.push(word);
                 }
             }
-        });
-        socket.on('submit',function(command) {
+        });*/
+        /*socket.on("password",function(password,callback) {
+            if(password == passwordt) {
+                callback(true);
+            }else {
+                callback(false);
+            }
+        });*/
+        socket.on('command',function(command) {
             //if(password == passwordt) {
             //    socket.emit('submit');
             //}
             if(command.includes("!remove ")) {
                 let word = command.slice("!remove ".length);
                 delete requestedWords["request"][word];
-                fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
+                fs.writeFile(__dirname + "/addedWords.json",JSON.stringify(requestedWords),(err)=>{
                     if(err) console.error(err);
                 });
                 //console.log(Object.keys(requestedWords["request"][word]).length);
@@ -427,9 +660,9 @@ io.sockets.on('connection',function(socket) {
                 });
             }
         });
-        socket.on('postRequest',function(word){
+        socket.on('postRequest',function(word,callback){
             console.log(`word: ${word}`);
-            let acceptable = false;
+            /*let acceptable = false;
             for(let i = 0;i < word.length;i++) {
                 console.log(word[i]);
                 if(word[i] != " ") {
@@ -437,31 +670,36 @@ io.sockets.on('connection',function(socket) {
                     break;
                 }
             }
-            if(acceptable) {
+            if(acceptable) {*/
                 if(!requestedWords["request"]) requestedWords["request"] = {};
-                if(requestedWords["added"]) {
-                    console.log(requestedWords["added"][word]);
-                    if(requestedWords["added"][word] != 0) {
-                        requestedWords["request"][word] = 0;
-                        fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
+                
+                //if(requestedWords["added"]) {
+                    console.log(requestedWords["request"][word]);
+                    if(!requestedWords["added"][word]) {
+                        if(requestedWords["request"][word]) {
+                            requestedWords["request"][word]++;
+                        }else {
+                            requestedWords["request"][word] = 1;
+                        }
+                        fs.writeFile(__dirname + "/addedWords.json",JSON.stringify(requestedWords),(err)=>{
                             if(err) console.error(err);
                         });
                         requestList.forEach((socket)=>{
                             socket.emit('getRequests',requestedWords["request"]);
                         });
                     }else {
-                        socket.emit('postRequest');
+                        callback();
                     }
-                }else {
-                    requestedWords["request"][word] = 0;
+                /*} else {
+                    requestedWords["request"][word] = 1;
                     fs.writeFile("addedWords.json",JSON.stringify(requestedWords),(err)=>{
                         if(err) console.error(err);
                     });
                     requestList.forEach((socket)=>{
                         socket.emit('getRequests',requestedWords["request"]);
                     });
-                }
-            }
+                }*/
+            //}
         });
         socket.on('disconnect',function() {
             delete requestList[bruh];
@@ -473,12 +711,12 @@ io.sockets.on('connection',function(socket) {
     bruh++;
 });
 /*setInterval(function() {
-    players = Object.keys(PLAYER_LIST).length
+    players = Object.keys(playerList).length
     //print(Object.keys(SOCKET_LIST).length);
     var pack = [];
 
-    for(var i in PLAYER_LIST) {
-        var player = PLAYER_LIST[i];
+    for(var i in playerList) {
+        var player = playerList[i];
         //print(player.score);
         pack.push({
             x:player.x,

@@ -16,28 +16,33 @@
 
     </script>
     <style>
-body {
-    background: url(https://skribbl.io/res/background.png) center fixed;
-    background-size: 256px;
-}
-#chat::-webkit-scrollbar {
-    display: none;
-}
+        body {
+            background: url(https://skribbl.io/res/background.png) center fixed;
+            background-size: 256px;
+        }
+        #chat::-webkit-scrollbar {
+            display: none;
+        }
+        canvas {
+            display: inline-block;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        #chat {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+            border: ridge seagreen;
+            z-index: 0;
+        }
 
-/* Hide scrollbar for IE, Edge and Firefox */
-#chat {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-img {
-    cursor:pointer;
-}
-img:hover {
-    outline: cadetblue 2px outset;
-}
-img:hover:active {
-    outline: cadetblue 2px inset;
-}
+        img {
+            cursor:pointer;
+        }
+        img:hover {
+            outline: cadetblue 2px outset;
+        }
+        img:hover:active {
+            outline: cadetblue 2px inset;
+        }
     </style>
 </head>
 <body>
@@ -45,11 +50,11 @@ img:hover:active {
         <h1>
             Discount <bruh style="color: red;">s</bruh><bruh style="color: orange;">k</bruh><bruh style="color: yellow;">r</bruh><bruh style="color: green;">i</bruh><bruh style="color: cyan;">b</bruh><bruh style="color: blue;">b</bruh><bruh style="color: purple;">l</bruh><bruh style="color: pink;">.</bruh><bruh style="color: white;">io</bruh>
         </h1>
-        <form id="play-form">
-            <input style="font-size: 30px;" id="name" placeholder="type your name here!">
+        <form id="play-form" style="display:inline-block">
+            <input style="font-size: 30px;display:block;" id="name" placeholder="type your name here!">
 
             </input>
-            <button style="font-size: 30px;">
+            <button style="font-size: 30px;width:100%;margin-top: 10px;">
                 Play!
             </button>
         </form>
@@ -59,8 +64,9 @@ img:hover:active {
             Size: 1
             
         </h2>
+        <h1><code style="letter-spacing: 2px;margin-bottom: -15px;display: block;" id="letters"></code></h1>
         <!--img id="cursor" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Disk_pack1.svg/1200px-Disk_pack1.svg.png" style="user-select: none;display: none;margin-bottom: -39px;z-index: 1;position: relative;" width=3 height=3-->
-        <canvas onload="console.log('dung')" onmousewheel="event.preventDefault();size -= event.deltaY/200;get('showSize').innerText = 'Size: '+(size-2);/*;get('cursor').width = size;get('cursor').height = size;*/" style="display: none;border: ridge seagreen;z-index: 0;" width="800" height="600" id="ctx">
+        <canvas onload="console.log('dung')" onmousewheel="event.preventDefault();size -= event.deltaY/200;get('showSize').innerText = 'Size: '+(size-2);/*;get('cursor').width = size;get('cursor').height = size;*/" style="display: none;" width="800" height="600" id="ctx">
             
         </canvas>
         <!--br-->
@@ -74,12 +80,11 @@ img:hover:active {
             <img src= "https://cdn.pixabay.com/photo/2012/04/12/20/12/x-30465_640.png" title="clear" onclick = "socket.emit('clear');"  width=30 height=30 style="float:right;margin-right: 10px;margin-top:7px;">
 
         </div>
-        <h1><code style="letter-spacing: 2px;margin-bottom: -15px;display: block;" id="letters"></code></h1>
-        <div>
-            <div id="chat" style="display: none;width: 400px;height: 200px;overflow-y: scroll;background-color: #bbbbbb;border: ridge #cd845a;">
+        <div style="display: none;">
+            <div id="chat" style="width: 400px;height: 200px;overflow-y: scroll;background-color: #bbbbbb;border: ridge #cd845a;">
 
             </div>
-            <form id="chat-form" style="display: none;">
+            <form id="chat-form">
                 <input id="chat-input" type="text" style="width: 300px;font-size: 20px;" placeholder="type your message here"></input>
                 <button style="font-size: 20px;">Send</button>
             </form> 
@@ -423,7 +428,7 @@ img:hover:active {
             }
         };
         canvas.oncontextmenu = function(event) {
-            return false;
+            event.preventDefault();
         }
         
         
@@ -437,28 +442,24 @@ img:hover:active {
         }
         function sendStart() {
             socket.emit('start','yes!');
-            
         }
-        socket.on('start',start);
-            
-        
-        function start() {
+        socket.on('start',/*start*/ () => {
             started = true;
-            canvas.style.display = "inline";
-            chat.style.display = "block";
-            chatForm.style.display = "inline";
+            canvas.style.display = "";
+            chat.parentElement.style.display = "inline-block";
+            chatForm.style.display = "";
             get('lobby').style.display = "none";
-        }
+        });
         
         //var distance = {
         //    x:0,
         //    y:0,
         //}
-        socket.emit('setSize', {
-                width:canvas.width,
-                height:canvas.height,
-            })
-        window.onbeforeunload = confirmExit;
+        /*socket.emit('setSize', {
+            width:canvas.width,
+            height:canvas.height,
+        });*/
+        //window.onbeforeunload = confirmExit;
         function rgbToHex(r, g, b) {
             return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
         }   
@@ -470,10 +471,10 @@ img:hover:active {
             return hex.length == 1 ? "0" + hex : hex;
         }
         
-        function confirmExit() {
-            socket.emit('closed');
+        //function confirmExit() {
+            //socket.emit('closed');
                 //return "You have attempted to leave this page. Are you sure?";
-        }
+        //}
         ctx.fillStyle = "white";
         ctx.fillRect(0,0,canvas.width,canvas.height);
     </script>

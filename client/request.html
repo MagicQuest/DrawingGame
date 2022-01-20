@@ -11,6 +11,7 @@
 
     </script>
     <link rel="stylesheet" href="https://magicquest.github.io/clickable.css">
+    <link rel="stylesheet" href="https://magicquest.github.io/font.css">
     <!--link rel="stylesheet" href="https://magicquest.github.io/"-->
     <script src="https://magicquest.github.io/oof.js">
 
@@ -28,42 +29,82 @@
         body::-webkit-scrollbar {
             display: none;
         }
-        button {
+        /*button {
             border: none;
             background-color: rgba(0,0,0,0);
+        }*/
+        code {
+            cursor: pointer;
         }
-        #show {
+
+        code:hover {
+            background-color: rgba(0, 0, 0, .125);
+        }
+        
+        button {
             outline: none;
-            border: outset;
+            border: outset wheat;
+            width: 100%;
+            margin: 10px 0 10px 0;
+            background: wheat;
         }
-        #show:active {
-            border: inset;
+        button:active {
+            border: inset wheat;
+        }
+        #passwordForm {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            border: 1px grey solid;
+            border-radius: 12px;
+            box-shadow: 0px 0px 50px rgb(0 0 0 / 25%);
+            background: blanchedalmond;
+            padding: 10px;
+        }
+        /*body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+        }*/
+        #requests {
+            overflow-y: scroll;
+            background-color: blanchedalmond;
+            display: block;
+            width: 35%;
+            height: 70%;
+            border: ridge 2px sandybrown;
+            font-size: 20px;
         }
     </style>
     
 </head>
 <body>
+    <!--div id="overlay" style="width: 100%;height: 100%;background: rgba(0,0,0,.25);position: absolute;">
+
+    </div-->
     <center id="center">
-        <h1>
+        <h1 style="margin-bottom: 5px;">
             Word requests
         </h1>
         <h2 style="color: red;display: none;" id="error">
             That word was already added
         </h2>
         <!--div id="requestDiv"-->
-            <form id="requestForm">
-                <input placeholder="word" id="word">
-                <br>
-                <button id="show">
+            <form id="requestForm" style="display: inline-block;font-size: 20px;">
+                <input placeholder="word" id="word" style="display: block;">
+                <button>
                     submit
                 </button>
             </form>
         <!--/div-->
-        <div id="requests" style="overflow-y: scroll;background-color: blanchedalmond;display:block;width: 35%;height: 70%;border: ridge 2px sandybrown;">
+        <div id="requests">
 
         </div>
         <!--tabindex="0" onblur="remove();"-->
-        <div id="remove" style="display:none;position: absolute;background-color: rgb(255, 206, 132);top: 0px;left: 0px;height:95px;text-align: center;">
+
+        <!--div id="remove" style="display:none;position: absolute;background-color: rgb(255, 206, 132);top: 0px;left: 0px;height:95px;text-align: center;">
             <p style="margin-bottom: 5px;">
                 In order for you to remove/add this word you must input a password
             </p>
@@ -73,9 +114,17 @@
                 Approve
             </label>
             <input type="checkbox" id="approve">
-        </div>
-        <form style="position:absolute;bottom: 10px;" id="passwordForm">
-            <input placeholder="insert the command" id='password'>
+        </div-->
+
+        <!--form id="passwordForm">
+            <h1>
+                login fella
+            </h1>
+            <input placeholder="password?">
+        </form-->
+
+        <form style="position:absolute;bottom: 10px;" id="commandBar">
+            <input placeholder="insert the command" style="font-size: 20px;">
         </form>
     </center>
     
@@ -87,43 +136,83 @@
     </center-->
     <script>
         var socket = io();
-        var shid;
+        //var shid;
         var requests = get('requests');
         var removeConfirm = get('remove');
         var selectedWord;
-        get("passwordForm").onsubmit = function(event) {
-            //it was gonna be for a password thing but i can just use it for commands like removing suggestions
-            event.preventDefault();
-            socket.emit("submit",get("password").value);
-            get("password").value = "";
+
+        commandBar.onsubmit = function(event) {
+            socket.emit("command",commandBar.firstElementChild.value);
+            commandBar.firstElementChild.value = "";
         }
+
+        /*get("passwordForm").onsubmit = function(event) {
+            //it was gonna be for a password thing but i can just use it for commands like removing suggestions (wait what)
+            event.preventDefault();
+
+            let password = passwordForm.firstElementChild.value;
+            //socket.emit("submit",get("password").value);
+            socket.emit("submit",passwordForm.firstElementChild.value,(right) => {
+                if(right) {
+                    localStorage.setItem("password",password);
+                    passwordForm.remove();
+                }
+                passwordForm.firstElementChild.value = "";
+            });
+            //passwordForm.firstElementChild.value = "";
+        }*/
         get("requestForm").onsubmit = function(event) {
             event.preventDefault();
-            socket.emit('postRequest',get('word').value);
+            socket.emit('postRequest',get('word').value,() => {
+                get('error').style.display = "block";
+                setTimeout(function() {
+                    get('error').style.display = "none";
+                },1000);
+            });
             get('word').value = "";
         }
-        socket.on('submit',function() {
-            console.log('Welcome, Agent 47.');
-            get("passwordForm").remove();
-        });
-        socket.on('postRequest',function() {
+        //socket.on('submit',function() {
+        //    console.log('Welcome, Agent 47.'); //dawg :joy:
+
+        //    get("passwordForm").remove();
+        //});
+        /*socket.on('postRequest',function() {
             get('error').style.display = "block";
             setTimeout(function() {
                 get('error').style.display = "none";
             },1000)
-        });
+        });*/
         function ONCLICK(event,word) {
-            selectedWord = word.title;
-            removeConfirm.style.left = event.x+"px";
-            removeConfirm.style.top = event.y+"px";
-            removeConfirm.style.display = "block";
+            //selectedWord = word.title;
+            socket.emit("postRequest",word);
+            //removeConfirm.style.left = event.x+"px";
+            //removeConfirm.style.top = event.y+"px";
+            //removeConfirm.style.display = "block";
             //removeConfirm.focus();
         }
         socket.on('getRequests',function(json) {
-            shid = json;
+            //shid = json;
             //let words = [];
             requests.innerHTML = "<div>";
-            Object.entries(shid).forEach((obj)=>{
+            get("leaderboard").firstElementChild.firstElementChild.innerHTML = "";
+            let votes = [];
+            for (let obj in json) {
+                votes.push(json[obj]);
+            }
+            votes.sort((a,b)=>b-a);
+            votes.forEach(vote => {
+                for(let obj in json) {
+                    if(!players[person].checked && players[person].size/5 == size) {
+                        players[person].checked = true;
+                        get("leaderboard").firstElementChild.firstElementChild.innerHTML += `<tr><th>${person}</th><th>${players[person].size/5}</th></tr>`
+                    }
+                }
+            });
+            for (let obj in json) {
+                let amount = json[obj];
+                requests.innerHTML += `<div style="text-align: left;"><code onclick="ONCLICK(event,this.title);console.log('what')" title="${obj}" style="font-size:20px;font-weight:bold;color:rgb(57, 117, 206);">${obj}${amount > 1 ? " (" + amount + " votes)" : ""},</code></div>`
+            }
+            //Object.entries(shid).forEach((obj)=>{
                 //console.log(obj[0]);
                 //words.push(obj[0]);
                 /*if(get(word)) {
@@ -132,15 +221,15 @@
                     requests.innerHTML += `<div style="text-align: left;"><pre id='${word}'style="font-weight:bold;color:rgb(57, 117, 206);">,${word}</pre></div>`;
                 }*/
                 //console.log(name,word);
-                requests.innerHTML += `<div style="text-align: left;"><button><code onclick="ONCLICK(event,this);console.log('what')" title="${obj[0]}" style="font-size:20px;font-weight:bold;color:rgb(57, 117, 206);">${obj[0]},</code></button></div>`
-            });
+                //requests.innerHTML += `<div style="text-align: left;"><code onclick="ONCLICK(event,this.title);console.log('what')" title="${obj[0]}" style="font-size:20px;font-weight:bold;color:rgb(57, 117, 206);">${obj[0]},</code></div>`
+            //});
             requests.innerHTML+="</div>"
             //requests.innerHTML = `<div style="text-align: left;"><code title="${words}" style="font-weight:bold;color:rgb(57, 117, 206);">${words}</code></div>`
         });
-        function confirmExit() {
-            socket.emit('closed');
+        //function confirmExit() {
+            //socket.emit('closed');
                 //return "You have attempted to leave this page. Are you sure?";
-        }
+        //}
         function remove() {
             removeConfirm.style.display = "none";
             socket.emit('removePassword',{password: get("realPassword").value,word: selectedWord,approve: get('approve').checked});

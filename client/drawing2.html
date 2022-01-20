@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta property="og:title" content="Skribble.io remake" />
+    <meta property="og:type" content="website" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>skrible</title>
+    <meta property="og:description" content="one of my multiplayer games" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.4.0/socket.io.js"></script>
+    <link rel="stylesheet" href="https://magicquest.github.io/clickable.css">
+    <link rel="stylesheet" href="https://magicquest.github.io/font.css">
+    <!--script src="https://magicquest.github.io/oof.js"></script-->
+    <style>
+        body {
+            background: url(img/background.png) center fixed;
+            background-size: 256px;
+        }
+        joined,answered {
+            font-weight: bold;
+            color:rgb(86, 206, 39);
+        }
+        left {
+            font-weight: bold;
+            color:rgb(206, 79, 10);
+        }
+        turn {
+            font-weight:bold;
+            color:rgb(57, 117, 206);
+        }
+        close {
+            font-weight: bold;
+            color:rgb(255, 255, 0);
+        }
+        #chat {
+            display: inline-block;
+        }
+        #chatContent::-webkit-scrollbar {
+            display: none;
+        }
+        #chatContent div:nth-child(even) {
+            background-color: rgba(255,255,255,.25);
+        }
+        canvas {
+            background-color: #fff;
+            /*max-width: 800px;
+            max-height: 600px;*/
+        }
+        #canvasOverlay {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 10%;
+        }
+
+        #colorPreview {
+            height: 48px;
+            width: 48px;
+            margin-right: 8px;
+            border-radius: 2px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        #colorDiv {
+            height: 100%;
+            margin-right: 8px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+
+            pointer-events: initial;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .colorColumn {
+            height: 24px;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+        }
+        .colorColumn > * {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+        #clearButton {
+            pointer-events: initial;
+            display: inline-block;
+            height: 48px;
+            width: 48px;
+            background-image: url(img/clear.gif);
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: .6;
+            cursor: pointer;
+            image-rendering: pixelated;
+        }
+        #clearButton:hover {
+            opacity: 1;
+        }
+
+        .toolActive {
+            background-color: #9664c8 !important;
+            filter: none !important;
+        }
+        .toolActive > * {
+            height: 100% !important;
+        }
+        .tool {
+            pointer-events: initial;
+            cursor: pointer;
+            flex: 0 0 auto;
+            width: 48px;
+            height: 48px;
+            background-color: #fff;
+            border-radius: 2px;
+            margin-right: 4px;
+            filter: grayscale();
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .toolIcon {
+            image-rendering: pixelated;
+            /*height: 100%;*/
+            width: 32px;
+            pointer-events: none;
+        }
+        #toolDiv {
+            display: inline-flex;
+        }
+    </style>
+</head>
+<body>
+    <svg width="0" height="0" style="position:absolute;z-index:-1;">
+        <defs>
+            <filter id="remove-alpha" x="0" y="0" width="100%" height="100%">
+            <feComponentTransfer>
+                    <feFuncA type="discrete" tableValues="0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+                                                        1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1">
+                    </feFuncA>
+                </feComponentTransfer>
+            </filter>
+        </defs>
+    </svg>
+    
+    <center id="playMenu" style="font-size: 30px;">
+        <h1>
+            Discount <bruh style="color: red;">s</bruh><bruh style="color: orange;">k</bruh><bruh style="color: yellow;">r</bruh><bruh style="color: green;">i</bruh><bruh style="color: cyan;">b</bruh><bruh style="color: blue;">b</bruh><bruh style="color: purple;">l</bruh><bruh style="color: pink;">.</bruh><bruh style="color: white;">io</bruh>
+        </h1>
+        <form id="playForm" style="display:inline-block">
+            <input style="font-size: 30px;display:block;" placeholder="type your name here!">
+
+            </input>
+            <button style="font-size: 30px;width:100%;margin-top: 10px;">
+                Play!
+            </button>
+        </form>
+    </center>
+
+    <center id="lobby" style="display: none;">
+        <h1>bruh what you doing</h1>
+        <button style="display: none;" onclick="socket.emit('start')">start game</button>
+    </center>
+
+    <center id="game" style="display: none;">
+        <h1 style="letter-spacing: 2px;display: block;font-family: monospace;user-select: none; -webkit-user-select: none;" id="letterInfo"></h1>
+        <!--div id="playerList">
+            <div class="player" id="player0">
+                <div class="rank">#1</div>
+                <div class="info">
+                    <div class="name" style="color: rgb(0, 0, 255);">cheese (You)</div>
+                    <div class="score">Points: 65</div>
+                </div>
+                <div class="avatar">
+                    <div class="color" style="background-size: 480px 480px; background-position: -96px 0px;"></div>
+                    <div class="eyes" style="background-size: 480px 480px; background-position: -288px -48px;"></div>
+                    <div class="mouth" style="background-size: 480px 480px; background-position: -240px 0px;"></div>
+                    <div class="special" style="display: none;"></div>
+                    <div class="owner"></div>
+                    <div class="drawing"></div>
+                </div>
+                <div class="message" style="display: none">
+                    <div class="arrow"></div>
+                    <div class="content">
+                        <div class="text"></div>
+                        <div class="iconThumbsUp"></div>
+                        <div class="iconThumbsDown"></div>
+                    </div>
+                </div>
+            </div>
+        </div-->
+        <div style="display:inline-block;position: relative;">
+            <canvas id="canvas" width="800" height="600" oncontextmenu="event.preventDefault();" style="image-rendering: pixelated;"></canvas>
+            <div id="canvasOverlay" style="background: rgba(0,0,0,.25);pointer-events: none;display: none;">
+                <div id="colorPreview" style="background: rgb(0, 0, 0);"></div>
+                <div id="colorDiv">
+                    <div class="colorColumn">
+                        <div style="background: #FFF"></div>
+                        <div style="background: #C1C1C1"></div>
+                        <div style="background: #EF130B"></div>
+                        <div style="background: #FF7100"></div>
+                        <div style="background: #FFE400"></div>
+                        <div style="background: #00CC00"></div>
+                        <div style="background: #00B2FF"></div>
+                        <div style="background: #231FD3"></div>
+                        <div style="background: #A300BA"></div>
+                        <div style="background: #D37CAA"></div>
+                        <div style="background: #A0522D"></div>
+                    </div>
+                    <div class="colorColumn">
+                        <div style="background: #000"></div>
+                        <div style="background: #4C4C4C"></div>
+                        <div style="background: #740B07"></div>
+                        <div style="background: #C23800"></div>
+                        <div style="background: #E8A200"></div>
+                        <div style="background: #005510"></div>
+                        <div style="background: #00569E"></div>
+                        <div style="background: #0E0865"></div>
+                        <div style="background: #550069"></div>
+                        <div style="background: #A75574"></div>
+                        <div style="background: #63300D"></div>
+                    </div>
+                </div>
+                <div id="toolDiv">
+                    <div class="tool toolActive">
+                        <img class="toolIcon" src="img/pen.gif" title="pencil">
+                    </div>
+                    <div class="tool">
+                        <img class="toolIcon" src="img/rubber.gif" title="eraser">
+                    </div>
+                    <div class="tool">
+                        <img class="toolIcon" src="img/filltool.gif" title="fill">
+                    </div>
+                </div>
+                <div id="clearButton" onclick="socket.emit('clear');">
+                    
+                </div>
+                <!--div style="width: 100%;height: 100px;bottom: 0;"></div-->
+            </div>
+        </div>
+
+        <div id="chat">
+            <div id="chatContent" style="width: 300px;height: 574px;overflow-y: scroll;background-color: #bbbbbb;border: ridge #cd845a;">
+
+            </div>
+            <form onsubmit="event.preventDefault(); socket.emit('sendMsg',this.firstElementChild.value); this.firstElementChild.value = '';">
+                <input placeholder="type your guess here" style="width: 100%;box-sizing: border-box;font-size: 24px;">
+            </form>
+        </div>
+    </center>
+    
+    <!--canvas id="cursorCanvas">
+
+    </canvas-->
+
+    <!--hahaha i don't have to tell you what said file is :trole:-->
+    <!--script src="/scip">
+        
+    </script-->
+
+    <script>
+
+        var socket = io();  
+
+        var startPos = {x: 0,y: 0};
+        var drawSize = 10;
+        var tool = "pencil";
+        var color = "rgb(0,0,0)";
+		var context = canvas.getContext('2d');
+        context.imageSmoothingEnabled = false;
+
+        var cursorCanvas = document.createElement("canvas");
+        var name;
+
+        updateCursor();
+        //var yourTurn;
+
+        drawingInfo = undefined;
+
+        //context.setTransform(1, 0, 0, 1, 120, 0);
+        context.filter = 'url(#remove-alpha)';
+
+        function colorToObj(color) {
+            let count = 0;
+            let colorValue = {r: 0,g: 0,b: 0};
+            for (let i in colorValue) {
+                colorValue[i] = parseInt(color.slice(4).replace(")","").split(",")[count]);
+                count++;
+            }
+            colorValue.a = 255;
+            return colorValue;
+        }
+
+        function turnStuff(person,word) {
+            let turn = name == person;
+            chatContent.innerHTML += `<div><turn>Its ${person}'s turn</turn></div>`
+            if(turn) {
+                console.log("your turn:",name);
+                letterInfo.innerText = word;
+                canvasOverlay.style.display = "";
+                //canvas.ontouchmove 
+                canvas.onmousemove = (event) => {
+                    if(event.buttons == 1) {
+                        if(tool == "pencil") {
+                            /*context.beginPath();
+                            context.strokeStyle = color;
+                            context.lineWidth = drawSize;
+                            context.lineJoin = "round";
+                            context.moveTo(startPos.x,startPos.y);
+                            context.lineTo(event.offsetX,event.offsetY);
+                            context.closePath();
+                            context.stroke();*/
+                            //draw({start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: color.replace("rgb","rgba").replace(")",", .25)")}); //transparency
+                            socket.emit("draw",{start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: color});
+                            //context.fillRect(event.offsetX,event.offsetY,20,20)
+                        }else if(tool == "eraser"){
+                            //draw({start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "rgba(255,255,255,.25)"});
+                            socket.emit("draw",{start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "rgb(255,255,255)"});
+                        }
+                    }else if(event.buttons == 2) {
+                        //selectTool(toolDiv.children[1]);
+                        //draw({start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "rgba(255,255,255,.25)"});
+                        socket.emit("draw",{start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "rgb(255,255,255)"});
+                    }
+                    startPos.x = event.offsetX;
+                    startPos.y = event.offsetY;
+                }
+                canvas.ontouchmove = (event) => {
+                    //if(event.buttons == 1) {
+                        if(tool == "pencil") {
+                            /*context.beginPath();
+                            context.strokeStyle = color;
+                            context.lineWidth = drawSize;
+                            context.lineJoin = "round";
+                            context.moveTo(startPos.x,startPos.y);
+                            context.lineTo(event.offsetX,event.offsetY);
+                            context.closePath();
+                            context.stroke();*/
+                            draw({start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: color.replace("rgb","rgba").replace(")",", .25)")}); //transparency
+                            socket.emit("draw",{start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: color});
+                            //context.fillRect(event.offsetX,event.offsetY,20,20)
+                        }else if(tool == "eraser"){
+                            draw({start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "rgba(255,255,255,.25)"});
+                            socket.emit("draw",{start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "rgb(255,255,255)"});
+                        }
+                    /*}else if(event.buttons == 2) {
+                        //selectTool(toolDiv.children[1]);
+                        draw({start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "rgba(255,255,255,.25)"});
+                        socket.emit("draw",{start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "rgb(255,255,255)"});
+                    }*/
+                    startPos.x = event.offsetX;
+                    startPos.y = event.offsetY;
+                }
+                event.preventDefault();
+            }else {
+                letterInfo.innerText = word.replace(/([aA-zZ])/g,"_");
+                canvasOverlay.style.display = "none";
+                canvas.onmousemove = undefined;
+                selectTool(toolDiv.firstElementChild);
+            }
+            context.fillStyle = "white";
+            context.fillRect(0,0,canvas.width,canvas.height);
+        }
+
+        function draw(object,info) {
+            if(object.fill) {
+                floodFill(object.x,object.y,object.color);
+                return;
+            }
+            let start = object.start;
+            let end = object.end;
+            let size = object.size;
+            let color = object.color;
+            if(drawingInfo && drawingInfo.length != 0 && !info) {
+                drawingInfo.push(object);
+                return;
+            }
+            context.beginPath();
+            context.strokeStyle = color;
+            context.lineWidth = size;
+            context.lineJoin = "round";
+            context.moveTo(start.x,start.y);
+            context.lineTo(end.x,end.y);
+            context.closePath();
+            context.stroke();
+        }
+
+        playForm.onsubmit = function(e) {
+            e.preventDefault();
+            name = playForm.firstElementChild.value;
+            //let name = playForm.firstElementChild.value;
+            if(name) {
+                socket.emit('name',name,(drawingInfoe,word,drawer) => {
+                    //if(started) {
+                        //let drawingInfo = info;
+                        //let word = info2;
+                        drawingInfo = drawingInfoe;
+                        let drawingEffect = setInterval(()=>{
+                            if(drawingInfo.length == 0) {
+                                clearInterval(drawingEffect);
+                                return;
+                                //delete drawingInfo;
+                            }
+                            draw(drawingInfo[0],true);
+                            drawingInfo.splice(0,1);
+                        },1);
+                        letterInfo.innerText = word;
+                        chatContent.innerHTML += `<div><turn>Its ${drawer}'s turn</turn></div>`;
+                        chatContent.scrollTop = chatContent.scrollHeight;
+                        lobby.style.display = "none";
+                        game.style.display = "";
+                    /*}else {
+                        let host = info;
+                        lobby.style.display = "";
+                        lobby.firstElementChild.innerHTML = info2;
+                        if(host == name) {
+                            //lobby.firstElementChild.remove();
+                            lobby.lastElementChild.style.display = ""; // now the button
+                        }
+                    }*/
+                });
+                playMenu.style.display = "none";
+            }
+        }
+
+        socket.on('start',({host,word})=>{
+            //let turn = name == host;
+            lobby.style.display = "none";
+            game.style.display = "";
+            turnStuff(host,word);
+        });
+
+        socket.on("lobbyInfo",({host,fellas})=>{
+            lobby.style.display = "";
+            lobby.firstElementChild.innerHTML = fellas;
+            if(host == name) {
+                //lobby.firstElementChild.remove();
+                lobby.lastElementChild.style.display = ""; // now the button
+            }
+        });
+
+        socket.on("newTurn",({fella,word}) => {
+            turnStuff(fella,word);
+        });
+       	
+        socket.on("chatted",(msg) => {
+            chatContent.innerHTML += `<div>${msg}</div>`;
+            chatContent.scrollTop = chatContent.scrollHeight;
+        });
+
+        socket.on("draw",draw);
+
+        socket.on('clear',() => {
+            context.fillStyle = "white";
+            context.fillRect(0,0,canvas.width,canvas.height);
+        });
+
+        socket.on("fill",({x,y,color}) => {
+            floodFill(x,y,color);
+        });
+
+        socket.on("disconnect",()=>{
+            document.location.reload();
+        });
+
+        /*function draw() {
+			context.clearRect(0, 0, canvas.width, canvas.height);
+            context.fillRect(0,0,100,100);
+			requestAnimationFrame(draw);
+		}*/
+
+        canvas.addEventListener("mousedown",event => {
+			//context.moveTo(event.offsetX,event.offsetY);
+            if(tool == "pencil") {
+                startPos.x = event.offsetX;
+                startPos.y = event.offsetY;
+            }else if(tool == "fill") {
+                
+                socket.emit("fill",{x: event.offsetX,y: event.offsetY,color: color});
+                //console.log(colorValue,event.offsetX,event.offsetY);
+                //floodFill(event.offsetX,event.offsetY,colorToObj(color));
+            }
+		});
+        
+        /*canvas.addEventListener("mousemove",event => {
+			if(event.buttons == 1) {
+                /*context.beginPath();
+                context.strokeStyle = color;
+                context.lineWidth = drawSize;
+                context.lineJoin = "round";
+                context.moveTo(startPos.x,startPos.y);
+            	context.lineTo(event.offsetX,event.offsetY);
+                context.closePath();
+                context.stroke();*/
+                /*socket.emit("draw",{start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: color});
+				//context.fillRect(event.offsetX,event.offsetY,20,20)
+			}else if(event.buttons == 2) {
+                socket.emit("draw",{start: {x: startPos.x,y: startPos.y},end: {x: event.offsetX,y: event.offsetY},size: drawSize, color: "white"});
+            }
+            startPos.x = event.offsetX;
+            startPos.y = event.offsetY;
+		});*/
+
+        function circle(ctx,x,y,r,endAngle = 360,fillColor = undefined,strokeColor = undefined) {
+            ctx.beginPath();
+            
+            ctx.arc(x, y, r, 0, (endAngle/180) * Math.PI);
+            //bruh why did i check if it was 0 and not undefined
+            if(fillColor) {
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+            }
+            if(strokeColor) {
+                ctx.strokeStyle = strokeColor;
+            }
+            ctx.stroke();
+        }
+
+        function updateCursor() {
+            if(tool == "pencil" || tool == "eraser") {
+                let context = cursorCanvas.getContext('2d');
+
+                cursorCanvas.width = drawSize;
+                cursorCanvas.height = drawSize;
+
+                /*context.beginPath();
+                context.strokeStyle = "black";
+                context.lineWidth = drawSize;
+                context.lineCap = "round";
+                context.moveTo(drawSize/1.5,drawSize/1.5);
+                context.lineTo(drawSize*1.5,drawSize/1.5);
+                context.closePath();
+                context.stroke();*/
+                circle(context,drawSize/2,drawSize/2,drawSize/2,360,tool == "pencil" ? color.replace("rgb","rgba").replace(")",", .75)") : "rgb(255,255,255,.75)","black");
+
+                canvas.style.cursor = `url(${cursorCanvas.toDataURL()}) ${drawSize/2} ${drawSize/2}, default`;
+            }else if(tool == "fill") {
+                canvas.style.cursor = `url(img/fill_graphic.png) 7 38, default`;
+            }
+            
+        }
+        
+        canvas.addEventListener("wheel",event => {
+			//let key = event.key;
+            //if(key == "=") {
+                drawSize += -2*(event.deltaY/100)//++;
+                drawSize = drawSize <= 0 ? 1 : drawSize;
+                
+                updateCursor();
+                
+                event.preventDefault();
+			//}
+            //if(key == "-") {
+			//	drawSize--;
+			//}
+		});
+        
+        function floodFill( x, y, color ) {
+            console.log(color,x,y);
+            color = colorToObj(color);
+            pixel_stack = [{x:x, y:y}] ;
+            pixels = context.getImageData( 0, 0, canvas.width, canvas.height ) ;
+            let colorInfo = context.getImageData(x,y,1,1).data;
+            if(colorInfo[0] == color.r && colorInfo[1] == color.g && colorInfo[2] == color.b && colorInfo[3] == color.a) {
+                return;
+            }
+            var linear_cords = ( y * canvas.width + x ) * 4 ;
+            original_color = {r:pixels.data[linear_cords],g:pixels.data[linear_cords+1],b:pixels.data[linear_cords+2],a:pixels.data[linear_cords+3]};
+            while( pixel_stack.length>0 ) {
+                new_pixel = pixel_stack.shift() ;
+                x = new_pixel.x ;
+                y = new_pixel.y ;
+          
+                linear_cords = ( y * canvas.width + x ) * 4 ;
+                while( y-->=0 &&
+                       (pixels.data[linear_cords]==original_color.r &&
+                        pixels.data[linear_cords+1]==original_color.g &&
+                        pixels.data[linear_cords+2]==original_color.b &&
+                        pixels.data[linear_cords+3]==original_color.a) ) {
+                    linear_cords -= canvas.width * 4 ;
+                }
+                linear_cords += canvas.width * 4 ;
+                y++ ;
+
+                var reached_left = false ;
+                var reached_right = false ;
+                while( y++<canvas.height &&
+                       (pixels.data[linear_cords]==original_color.r &&
+                        pixels.data[linear_cords+1]==original_color.g &&
+                        pixels.data[linear_cords+2]==original_color.b &&
+                        pixels.data[linear_cords+3]==original_color.a) ) {
+                    pixels.data[linear_cords]   = color.r ;
+                    pixels.data[linear_cords+1] = color.g ;
+                    pixels.data[linear_cords+2] = color.b ;
+                    pixels.data[linear_cords+3] = color.a ;
+
+                    if( x>0 ) {
+                        if( pixels.data[linear_cords-4]==original_color.r &&
+                            pixels.data[linear_cords-4+1]==original_color.g &&
+                            pixels.data[linear_cords-4+2]==original_color.b &&
+                            pixels.data[linear_cords-4+3]==original_color.a ) {
+                            if( !reached_left ) {
+                                pixel_stack.push( {x:x-1, y:y} ) ;
+                                reached_left = true ;
+                            }
+                        } else if( reached_left ) {
+                            reached_left = false ;
+                        }
+                    }
+                
+                    if( x<canvas.width-1 ) {
+                        if( pixels.data[linear_cords+4]==original_color.r &&
+                            pixels.data[linear_cords+4+1]==original_color.g &&
+                            pixels.data[linear_cords+4+2]==original_color.b &&
+                            pixels.data[linear_cords+4+3]==original_color.a ) {
+                            if( !reached_right ) {
+                                pixel_stack.push( {x:x+1,y:y} ) ;
+                                reached_right = true ;
+                            }
+                        } else if( reached_right ) {
+                            reached_right = false ;
+                        }
+                    }
+                    
+                    linear_cords += canvas.width * 4 ;
+                }
+            }
+            context.putImageData( pixels, 0, 0 ) ;
+        }
+
+        function is_in_pixel_stack( x, y, pixel_stack ) {
+            for( var i=0 ; i<pixel_stack.length ; i++ ) {
+                if( pixel_stack[i].x==x && pixel_stack[i].y==y ) {
+                    return true ;
+                }
+            }
+            return false ;
+        }
+
+        function colorClick(event) {
+            color = event.srcElement.style.background;
+            colorPreview.style.background = color;
+            if(tool == "eraser") {
+                //tool = "pencil";
+                selectTool(toolDiv.firstElementChild); //bruh i should really do it by name
+            }
+            updateCursor();
+            //colorPreview.style.outline = `${} solid 2px`; how am i finna invert the coler
+        }
+
+        function selectTool(event) {
+            for(let i = 0; i < toolDiv.children.length; i++) {
+                toolDiv.children[i].className = "tool";
+            }
+            if(event.srcElement) {
+                //if(event.srcElement.parentElement == toolDiv) {
+                    event.srcElement.className = "tool toolActive";
+                    tool = event.srcElement.firstElementChild.title;
+                //}//else {
+                //    event.srcElement.parentElement.className = "tool toolActive";
+                //}
+            }else {
+                event.className = "tool toolActive";
+                tool = event.firstElementChild.title;
+            }
+            updateCursor();
+        }
+
+        for(let i = 0; i < colorDiv.children[0].children.length; i++) {
+            //console.log(colorDiv.children[0].children[i]);
+            colorDiv.children[0].children[i].onclick = colorClick; 
+        }
+
+        for(let i = 0; i < colorDiv.children[1].children.length; i++) {
+            //console.log(colorDiv.children[1].children[i]);
+            colorDiv.children[1].children[i].onclick = colorClick;
+        }
+
+        for(let i = 0; i < toolDiv.children.length; i++) {
+            toolDiv.children[i].onclick = selectTool;
+        }
+        
+        //draw();
+	</script>
+</body>
+</html>
